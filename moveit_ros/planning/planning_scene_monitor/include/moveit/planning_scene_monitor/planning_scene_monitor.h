@@ -52,6 +52,9 @@
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 #include <memory>
+#include <moveit/occupancy_map_monitor/esdf_map.h>
+#include <moveit/occupancy_map_monitor/map_monitor.h>
+#include <moveit/occupancy_map_monitor/map_updater.h>
 
 namespace planning_scene_monitor
 {
@@ -351,7 +354,7 @@ public:
    */
   void startWorldGeometryMonitor(const std::string& collision_objects_topic = DEFAULT_COLLISION_OBJECT_TOPIC,
                                  const std::string& planning_scene_world_topic = DEFAULT_PLANNING_SCENE_WORLD_TOPIC,
-                                 const bool load_octomap_monitor = true);
+                                 const bool load_octomap_monitor = true, const bool load_esdf_monitor = false);
 
   /** @brief Stop the world geometry monitor */
   void stopWorldGeometryMonitor();
@@ -426,6 +429,7 @@ protected:
 
   /** @brief Callback for octomap updates */
   void octomapUpdateCallback();
+  void esdfUpdateCallback();
 
   /** @brief Callback for a new attached object msg*/
   void attachObjectCallback(const moveit_msgs::AttachedCollisionObjectConstPtr& obj);
@@ -501,7 +505,7 @@ protected:
   std::unique_ptr<tf::MessageFilter<moveit_msgs::CollisionObject> > collision_object_filter_;
 
   // include a octomap monitor
-  std::unique_ptr<occupancy_map_monitor::OccupancyMapMonitor> octomap_monitor_;
+  std::unique_ptr<occupancy_map_monitor::MapMonitor> octomap_monitor_;
 
   // include a current state monitor
   CurrentStateMonitorPtr current_state_monitor_;

@@ -40,133 +40,14 @@
 #include <message_filters/subscriber.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
 #include <XmlRpcException.h>
-
+#include <swri_profiler/profiler.h>
 #include <memory>
 
 namespace occupancy_map_monitor
 {
-PointCloudOctomapUpdater::PointCloudOctomapUpdater()
-  : OccupancyMapUpdater("PointCloudUpdater")
-  , private_nh_("~")
-  , scale_(1.0)
-  , padding_(0.0)
-  , max_range_(std::numeric_limits<double>::infinity())
-  , point_subsample_(1)
-  , max_update_rate_(0)
-  , point_cloud_subscriber_(NULL)
-  , point_cloud_filter_(NULL)
-{
-}
-
-PointCloudOctomapUpdater::~PointCloudOctomapUpdater()
-{
-  stopHelper();
-}
-
-bool PointCloudOctomapUpdater::setParams(XmlRpc::XmlRpcValue& params)
-{
-  try
-  {
-    if (!params.hasMember("point_cloud_topic"))
-      return false;
-    point_cloud_topic_ = static_cast<const std::string&>(params["point_cloud_topic"]);
-
-    readXmlParam(params, "max_range", &max_range_);
-    readXmlParam(params, "padding_offset", &padding_);
-    readXmlParam(params, "padding_scale", &scale_);
-    readXmlParam(params, "point_subsample", &point_subsample_);
-    if (params.hasMember("max_update_rate"))
-      readXmlParam(params, "max_update_rate", &max_update_rate_);
-    if (params.hasMember("filtered_cloud_topic"))
-      filtered_cloud_topic_ = static_cast<const std::string&>(params["filtered_cloud_topic"]);
-  }
-  catch (XmlRpc::XmlRpcException& ex)
-  {
-    ROS_ERROR("XmlRpc Exception: %s", ex.getMessage().c_str());
-    return false;
-  }
-
-  return true;
-}
-
-bool PointCloudOctomapUpdater::initialize()
-{
-  tf_ = monitor_->getTFClient();
-  shape_mask_.reset(new point_containment_filter::ShapeMask());
-  shape_mask_->setTransformCallback(boost::bind(&PointCloudOctomapUpdater::getShapeTransform, this, _1, _2));
-  if (!filtered_cloud_topic_.empty())
-    filtered_cloud_publisher_ = private_nh_.advertise<sensor_msgs::PointCloud2>(filtered_cloud_topic_, 10, false);
-  return true;
-}
-
-void PointCloudOctomapUpdater::start()
-{
-  if (point_cloud_subscriber_)
-    return;
-  /* subscribe to point cloud topic using tf filter*/
-  point_cloud_subscriber_ = new message_filters::Subscriber<sensor_msgs::PointCloud2>(root_nh_, point_cloud_topic_, 5);
-  if (tf_ && !monitor_->getMapFrame().empty())
-  {
-    point_cloud_filter_ =
-        new tf::MessageFilter<sensor_msgs::PointCloud2>(*point_cloud_subscriber_, *tf_, monitor_->getMapFrame(), 5);
-    point_cloud_filter_->registerCallback(boost::bind(&PointCloudOctomapUpdater::cloudMsgCallback, this, _1));
-    ROS_INFO("Listening to '%s' using message filter with target frame '%s'", point_cloud_topic_.c_str(),
-             point_cloud_filter_->getTargetFramesString().c_str());
-  }
-  else
-  {
-    point_cloud_subscriber_->registerCallback(boost::bind(&PointCloudOctomapUpdater::cloudMsgCallback, this, _1));
-    ROS_INFO("Listening to '%s'", point_cloud_topic_.c_str());
-  }
-}
-
-void PointCloudOctomapUpdater::stopHelper()
-{
-  delete point_cloud_filter_;
-  delete point_cloud_subscriber_;
-}
-
-void PointCloudOctomapUpdater::stop()
-{
-  stopHelper();
-  point_cloud_filter_ = NULL;
-  point_cloud_subscriber_ = NULL;
-}
-
-ShapeHandle PointCloudOctomapUpdater::excludeShape(const shapes::ShapeConstPtr& shape)
-{
-  ShapeHandle h = 0;
-  if (shape_mask_)
-    h = shape_mask_->addShape(shape, scale_, padding_);
-  else
-    ROS_ERROR("Shape filter not yet initialized!");
-  return h;
-}
-
-void PointCloudOctomapUpdater::forgetShape(ShapeHandle handle)
-{
-  if (shape_mask_)
-    shape_mask_->removeShape(handle);
-}
-
-bool PointCloudOctomapUpdater::getShapeTransform(ShapeHandle h, Eigen::Affine3d& transform) const
-{
-  ShapeTransformCache::const_iterator it = transform_cache_.find(h);
-  if (it == transform_cache_.end())
-  {
-    return false;
-  }
-  transform = it->second;
-  return true;
-}
-
-void PointCloudOctomapUpdater::updateMask(const sensor_msgs::PointCloud2& cloud, const Eigen::Vector3d& sensor_origin,
-                                          std::vector<int>& mask)
-{
-}
-
 void PointCloudOctomapUpdater::cloudMsgCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg)
 {
+  SWRI_PROFILE("cloudMsgCallback");
   ROS_DEBUG("Received a new point cloud message");
   ros::WallTime start = ros::WallTime::now();
 
@@ -206,7 +87,6 @@ void PointCloudOctomapUpdater::cloudMsgCallback(const sensor_msgs::PointCloud2::
 
   /* compute sensor origin in map frame */
   const tf::Vector3& sensor_origin_tf = map_H_sensor.getOrigin();
-  octomap::point3d sensor_origin(sensor_origin_tf.getX(), sensor_origin_tf.getY(), sensor_origin_tf.getZ());
   Eigen::Vector3d sensor_origin_eigen(sensor_origin_tf.getX(), sensor_origin_tf.getY(), sensor_origin_tf.getZ());
 
   if (!updateTransformCache(cloud_msg->header.frame_id, cloud_msg->header.stamp))
@@ -219,7 +99,7 @@ void PointCloudOctomapUpdater::cloudMsgCallback(const sensor_msgs::PointCloud2::
   shape_mask_->maskContainment(*cloud_msg, sensor_origin_eigen, 0.0, max_range_, mask_);
   updateMask(*cloud_msg, sensor_origin_eigen, mask_);
 
-  octomap::KeySet free_cells, occupied_cells, model_cells, clip_cells;
+
   std::unique_ptr<sensor_msgs::PointCloud2> filtered_cloud;
 
   // We only use these iterators if we are creating a filtered_cloud for
@@ -244,6 +124,8 @@ void PointCloudOctomapUpdater::cloudMsgCallback(const sensor_msgs::PointCloud2::
   }
   size_t filtered_cloud_size = 0;
 
+  octomap::KeySet free_cells, occupied_cells, model_cells, clip_cells;
+  octomap::point3d sensor_origin(sensor_origin_tf.getX(), sensor_origin_tf.getY(), sensor_origin_tf.getZ());
   tree_->lockRead();
 
   try
@@ -346,7 +228,7 @@ void PointCloudOctomapUpdater::cloudMsgCallback(const sensor_msgs::PointCloud2::
     ROS_ERROR("Internal error while updating octree");
   }
   tree_->unlockWrite();
-  ROS_DEBUG("Processed point cloud in %lf ms", (ros::WallTime::now() - start).toSec() * 1000.0);
+  //ROS_DEBUG("Processed point cloud in %lf ms", (ros::WallTime::now() - start).toSec() * 1000.0);
   tree_->triggerUpdateCallback();
 
   if (filtered_cloud)

@@ -34,12 +34,11 @@
 
 /* Author: Ioan Sucan, Jon Binney */
 
-#ifndef MOVEIT_OCCUPANCY_MAP_MONITOR_OCCUPANCY_MAP_UPDATER_
-#define MOVEIT_OCCUPANCY_MAP_MONITOR_OCCUPANCY_MAP_UPDATER_
+#ifndef MOVEIT_INDUSTRIAL_TOPLEVEL_MAP_UPDATER_H
+#define MOVEIT_INDUSTRIAL_TOPLEVEL_MAP_UPDATER_H
 
+#include <ros/ros.h>
 #include <moveit/macros/class_forward.h>
-#include <moveit/occupancy_map_monitor/occupancy_map.h>
-#include <moveit/occupancy_map_monitor/map_updater.h>
 #include <geometric_shapes/shapes.h>
 #include <boost/shared_ptr.hpp>
 #include <Eigen/Core>
@@ -47,65 +46,54 @@
 
 namespace occupancy_map_monitor
 {
+  typedef unsigned int ShapeHandle;
+  typedef std::map<ShapeHandle, Eigen::Affine3d, std::less<ShapeHandle>,
+      Eigen::aligned_allocator<std::pair<const ShapeHandle, Eigen::Affine3d> > >
+      ShapeTransformCache;
+  typedef boost::function<bool(const std::string& target_frame, const ros::Time& target_time, ShapeTransformCache& cache)>
+      TransformCacheProvider;
 
-  template<typename MapType>
-class OccupancyMapMonitor;
+  class MapMonitor;
 
-/** \brief Base class for classes which update the occupancy map.
- */
-  template <typename  MapType>
-class OccupancyMapUpdater: public MapUpdater
-{
-  typedef std::shared_ptr<MapType> MapTypePtr;
-  typedef std::shared_ptr<const MapType> MapTypeConstPtr;
-public:
-  OccupancyMapUpdater(const std::string& type);
-  virtual ~OccupancyMapUpdater();
+  MOVEIT_CLASS_FORWARD(MapUpdater);
 
-  /** \brief This is the first function to be called after construction */
-  virtual void setMonitor(MapMonitor* monitor) override ;
-
-  /** @brief Set updater params using struct that comes from parsing a yaml string. This must be called after
-   * setMonitor() */
-  virtual bool setParams(XmlRpc::XmlRpcValue& params) = 0;
-
-  /** @brief Do any necessary setup (subscribe to ros topics, etc.). This call assumes setMonitor() and setParams() have
-   * been previously called. */
-  virtual bool initialize() = 0;
-
-  virtual void start() = 0;
-
-  virtual void stop() = 0;
-
-  virtual ShapeHandle excludeShape(const shapes::ShapeConstPtr& shape) = 0;
-
-  virtual void forgetShape(ShapeHandle handle) = 0;
-
-  virtual const std::string& getType() const override
+  /** \brief Base class for classes which update the map.
+  */
+  class MapUpdater
   {
-    return type_;
-  }
 
-  virtual void setTransformCacheCallback(const TransformCacheProvider& transform_callback) override
-  {
-    transform_provider_callback_ = transform_callback;
-  }
+  public:
+    /** \brief This is the first function to be called after construction */
+    virtual void setMonitor(MapMonitor* monitor) = 0;
 
-  virtual void publishDebugInformation(bool flag) override
-  {
-    debug_info_ = flag;
-  }
+    /** @brief Set updater params using struct that comes from parsing a yaml string. This must be called after
+     * setMonitor() */
+    virtual bool setParams(XmlRpc::XmlRpcValue& params) = 0;
 
-protected:
-  OccupancyMapMonitor<MapType>* monitor_;
-  std::string type_;
-  MapTypePtr tree_;
-  TransformCacheProvider transform_provider_callback_;
-  ShapeTransformCache transform_cache_;
-  bool debug_info_;
+    /** @brief Do any necessary setup (subscribe to ros topics, etc.). This call assumes setMonitor() and setParams() have
+     * been previously called. */
+    virtual bool initialize() = 0;
 
-  virtual bool updateTransformCache(const std::string& target_frame, const ros::Time& target_time) override;
-};
+    virtual void start() = 0;
+
+    virtual void stop() = 0;
+
+    virtual ShapeHandle excludeShape(const shapes::ShapeConstPtr& shape) = 0;
+
+    virtual void forgetShape(ShapeHandle handle) = 0;
+
+    virtual const std::string& getType() const = 0;
+
+    virtual void setTransformCacheCallback(const TransformCacheProvider& transform_callback) = 0;
+
+    virtual void publishDebugInformation(bool flag) = 0;
+
+  protected:
+    virtual bool updateTransformCache(const std::string& target_frame, const ros::Time& target_time) = 0;
+    static void readXmlParam(XmlRpc::XmlRpcValue& params, const std::string& param_name, double* value);
+    static void readXmlParam(XmlRpc::XmlRpcValue& params, const std::string& param_name, unsigned int* value);
+    static void readXmlParam(XmlRpc::XmlRpcValue &params, const std::string &param_name, bool *value);
+  };
 }
-#include <moveit/occupancy_map_monitor/occupancy_map_updater.tpp>
+
 #endif

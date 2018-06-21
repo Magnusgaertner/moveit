@@ -46,6 +46,12 @@ World::World()
 World::World(const World& other)
 {
   objects_ = other.objects_;
+  map_ = other.map_;
+}
+World& World::operator=(const World& other){
+  objects_ = other.objects_;
+  map_ = other.map_;
+  return *this;
 }
 
 World::~World()
@@ -262,5 +268,13 @@ void World::notifyObserverAllObjects(const ObserverHandle observer_handle, Actio
     }
   }
 }
+
+void World::setMapPtr(collision_detection::MoveitMapPtr map){map_ = map;}
+
+collision_detection::MoveitMapPtr World::getMapPtr(){return map_;}
+
+void World::setMapPose(const Eigen::Affine3d& t){map_pose_ = t;}
+
+Eigen::Affine3d World::getWorldPose(){return map_pose_;}
 
 }  // end of namespace collision_detection

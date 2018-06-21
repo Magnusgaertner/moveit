@@ -22,6 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   tf_conversions
   eigen_conversions
+  voxblox_ros
   chomp_motion_planner
 )
 

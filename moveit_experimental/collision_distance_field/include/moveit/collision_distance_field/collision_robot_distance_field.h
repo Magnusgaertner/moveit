@@ -43,6 +43,7 @@
 #include <moveit/collision_distance_field/collision_common_distance_field.h>
 #include <moveit/planning_scene/planning_scene.h>
 #include <boost/thread/mutex.hpp>
+#include <std_srvs/Empty.h>
 
 namespace collision_detection
 {
@@ -60,6 +61,7 @@ class CollisionRobotDistanceField : public CollisionRobot
 {
   friend class CollisionWorldDistanceField;
 
+  friend class MyCollisionWorld;
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -80,6 +82,7 @@ public:
                               double scale = 1.0);
 
   CollisionRobotDistanceField(const CollisionRobotDistanceField& other);
+  virtual  ~CollisionRobotDistanceField();
 
   void initialize(const std::map<std::string, std::vector<CollisionSphere>>& link_body_decompositions,
                   const Eigen::Vector3d& size, const Eigen::Vector3d& origin, bool use_signed_distance_field,
@@ -265,6 +268,13 @@ protected:
   std::map<std::string, GroupStateRepresentationPtr> pregenerated_group_state_representation_map_;
 
   planning_scene::PlanningScenePtr planning_scene_;
+  ros::Publisher marker_pub;
+
+  bool show(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
+
+  ros::ServiceServer service_server;
+
+    bool showState(const moveit::core::RobotState &state) const;
 };
 }
 

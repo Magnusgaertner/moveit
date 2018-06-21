@@ -37,18 +37,15 @@
 #include <ros/ros.h>
 #include <moveit_msgs/SaveMap.h>
 #include <moveit_msgs/LoadMap.h>
-#include <moveit/occupancy_map_monitor/occupancy_map.h>
 #include <moveit/collision_detection/moveit_map.h>
 #include <moveit/occupancy_map_monitor/occupancy_map_monitor.h>
 #include <XmlRpcException.h>
-#include <moveit/occupancy_map_monitor/esdf_map.h>
 #include <typeinfo>
 
 
 namespace occupancy_map_monitor
 {
-  template class OccupancyMapMonitor<OccMapTree>;
-  template class OccupancyMapMonitor<EsdfMap>;
+
 
   template <typename  MapType>
 OccupancyMapMonitor<MapType>::OccupancyMapMonitor(double map_resolution)
@@ -109,7 +106,7 @@ void OccupancyMapMonitor<MapType>::initialize()
       if (sensor_list.getType() == XmlRpc::XmlRpcValue::TypeArray)
         for (int32_t i = 0; i < sensor_list.size(); ++i)
         {
-          if (sensor_list[i].getType() != XmlRpc::XmlRpcValue::TypeStruct)
+          if (!sensor_list[i].getType() == XmlRpc::XmlRpcValue::TypeStruct)
           {
             ROS_ERROR("Params for octomap updater %d not a struct; ignoring.", i);
             continue;

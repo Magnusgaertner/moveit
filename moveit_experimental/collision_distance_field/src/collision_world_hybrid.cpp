@@ -35,6 +35,7 @@
 /* Author: E. Gil Jones */
 
 #include <moveit/collision_distance_field/collision_world_hybrid.h>
+#include <moveit/collision_distance_field/collision_robot_hybrid.h>
 
 namespace collision_detection
 {
@@ -79,6 +80,7 @@ void CollisionWorldHybrid::checkCollisionDistanceField(const CollisionRequest& r
   cworld_distance_->checkCollision(req, res, robot, state, gsr);
 }
 
+
 void CollisionWorldHybrid::checkCollisionDistanceField(const CollisionRequest& req, CollisionResult& res,
                                                        const CollisionRobot& robot,
                                                        const robot_state::RobotState& state,
@@ -116,7 +118,17 @@ void CollisionWorldHybrid::checkRobotCollisionDistanceField(const CollisionReque
                                                             const robot_state::RobotState& state,
                                                             const AllowedCollisionMatrix& acm) const
 {
-  cworld_distance_->checkRobotCollision(req, res, robot, state, acm);
+    cworld_distance_->checkRobotCollision(req, res, robot, state, acm);
+}
+
+void CollisionWorldHybrid::checkRobotCollision(const CollisionRequest& req, CollisionResult& res,
+                                                            const CollisionRobot& robot,
+                                                            const robot_state::RobotState& state,
+                                                            const AllowedCollisionMatrix& acm) const
+{
+    cworld_distance_->checkRobotCollision(req, res, robot, state, acm);
+    //const CollisionRobotHybrid & robot_hybrid = dynamic_cast<const CollisionRobotHybrid&>(robot);
+    //cworld_distance_->checkRobotCollision(req, res, *robot_hybrid.getCollisionRobotDistanceField().get(), state, acm);
 }
 
 void CollisionWorldHybrid::checkRobotCollisionDistanceField(const CollisionRequest& req, CollisionResult& res,

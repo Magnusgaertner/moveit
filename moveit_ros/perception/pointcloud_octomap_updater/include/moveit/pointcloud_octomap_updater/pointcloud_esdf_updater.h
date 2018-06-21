@@ -1,7 +1,7 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2012, Willow Garage, Inc.
+ *  Copyright (c) 2011, Willow Garage, Inc.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -34,46 +34,32 @@
 
 /* Author: Jon Binney, Ioan Sucan */
 
-#include <boost/shared_ptr.hpp>
+#ifndef MOVEIT_INDUSTRIAL_TOPLEVEL_POINTCLOUD_ESDF_UPDATER_H
+#define MOVEIT_INDUSTRIAL_TOPLEVEL_POINTCLOUD_ESDF_UPDATER_H
+
 #include <ros/ros.h>
 #include <tf/tf.h>
-#include <tf/transform_listener.h>
-#include <moveit/occupancy_map_monitor/occupancy_map_monitor.h>
-#include <moveit/occupancy_map_monitor/occupancy_map.h>
-#include <octomap_msgs/conversions.h>
+#include <tf/message_filter.h>
+#include <message_filters/subscriber.h>
+#include <sensor_msgs/PointCloud2.h>
 
-static void publishOctomap(ros::Publisher* octree_binary_pub, occupancy_map_monitor::OccupancyMapMonitor<occupancy_map_monitor::OccMapTree>* server)
+#include <moveit/point_containment_filter/shape_mask.h>
+
+#include <memory>
+#include <moveit/occupancy_map_monitor/esdf_map.h>
+#include "pointcloud_map_updater.h"
+
+
+namespace occupancy_map_monitor
 {
-  octomap_msgs::Octomap map;
-
-  map.header.frame_id = server->getMapFrame();
-  map.header.stamp = ros::Time::now();
-
-  server->getOcTreePtr()->lockRead();
-  try
-  {
-    if (!octomap_msgs::binaryMapToMsgData(*server->getMapPtr(), map.data))
-      ROS_ERROR_THROTTLE(1, "Could not generate OctoMap message");
-  }
-  catch (...)
-  {
-    ROS_ERROR_THROTTLE(1, "Exception thrown while generating OctoMap message");
-  }
-  server->getOcTreePtr()->unlockRead();
-
-  octree_binary_pub->publish(map);
+  class PointCloudEsdfUpdater : public PointCloudMapUpdater<EsdfMap> {
+  public:
+    PointCloudEsdfUpdater():PointCloudMapUpdater(){}
+    virtual bool setParams(XmlRpc::XmlRpcValue &params);
+  protected:
+      bool filter_pointcloud = true;
+    virtual void cloudMsgCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg) override;
+  };
 }
 
-int main(int argc, char** argv)
-{
-  ros::init(argc, argv, "occupancy_map_server");
-  ros::NodeHandle nh;
-  ros::Publisher octree_binary_pub = nh.advertise<octomap_msgs::Octomap>("octomap_binary", 1);
-  boost::shared_ptr<tf::Transformer> listener = boost::make_shared<tf::TransformListener>(ros::Duration(5.0));
-  occupancy_map_monitor::OccupancyMapMonitor<occupancy_map_monitor::OccMapTree> server(listener);
-  server.setUpdateCallback(boost::bind(&publishOctomap, &octree_binary_pub, &server));
-  server.startMonitor();
-
-  ros::spin();
-  return 0;
-}
+#endif

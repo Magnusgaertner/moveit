@@ -41,6 +41,8 @@
 #include <fcl/traversal/traversal_node_setup.h>
 #include <fcl/collision_node.h>
 #include <boost/bind.hpp>
+#include <swri_profiler/profiler.h>
+
 
 namespace collision_detection
 {
@@ -51,7 +53,6 @@ CollisionWorldFCL::CollisionWorldFCL() : CollisionWorld()
   auto m = new fcl::DynamicAABBTreeCollisionManager();
   // m->tree_init_level = 2;
   manager_.reset(m);
-
   // request notifications about changes to new world
   observer_handle_ = getWorld()->addObserver(boost::bind(&CollisionWorldFCL::notifyObjectChange, this, _1, _2));
 }
@@ -98,6 +99,7 @@ void CollisionWorldFCL::checkRobotCollision(const CollisionRequest& req, Collisi
                                             const CollisionRobot& robot, const robot_state::RobotState& state,
                                             const AllowedCollisionMatrix& acm) const
 {
+  SWRI_PROFILE("checkRobotCollision");
   checkRobotCollisionHelper(req, res, robot, state, &acm);
 }
 

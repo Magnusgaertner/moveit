@@ -36,7 +36,6 @@
 
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 #include <moveit/robot_model_loader/robot_model_loader.h>
-#include <moveit/exceptions/exceptions.h>
 #include <moveit_msgs/GetPlanningScene.h>
 
 #include <dynamic_reconfigure/server.h>
@@ -45,6 +44,7 @@
 #include <moveit/profiler/profiler.h>
 
 #include <memory>
+#include <moveit/occupancy_map_monitor/esdf_map.h>
 
 namespace planning_scene_monitor
 {
@@ -184,6 +184,7 @@ void planning_scene_monitor::PlanningSceneMonitor::initialize(const planning_sce
 {
   moveit::tools::Profiler::ScopedStart prof_start;
   moveit::tools::Profiler::ScopedBlock prof_block("PlanningSceneMonitor::initialize");
+  ROS_ERROR("initializing planning scene");
 
   if (monitor_name_.empty())
     monitor_name_ = "planning_scene_monitor";
@@ -258,6 +259,7 @@ void planning_scene_monitor::PlanningSceneMonitor::initialize(const planning_sce
                                             false);  // do not start the timer yet
 
   reconfigure_impl_ = new DynamicReconfigureImpl(this);
+  //ROS_ERROR("move groups planning scene monitor uses active collision detector: %s",scene->getActiveCollisionDetectorName());
 }
 
 void planning_scene_monitor::PlanningSceneMonitor::monitorDiffs(bool flag)
@@ -1035,7 +1037,7 @@ bool planning_scene_monitor::PlanningSceneMonitor::getShapeTransformCache(
 
 void planning_scene_monitor::PlanningSceneMonitor::startWorldGeometryMonitor(
     const std::string& collision_objects_topic, const std::string& planning_scene_world_topic,
-    const bool load_octomap_monitor)
+    const bool load_octomap_monitor, const bool load_esdf_monitor)
 {
   stopWorldGeometryMonitor();
   ROS_INFO_NAMED(LOGNAME, "Starting world geometry monitor");
@@ -1073,11 +1075,12 @@ void planning_scene_monitor::PlanningSceneMonitor::startWorldGeometryMonitor(
   }
 
   // Ocotomap monitor is optional
-  if (load_octomap_monitor)
+
+  if (nh_.param("load_octomap_monitor", false))
   {
     if (!octomap_monitor_)
     {
-      octomap_monitor_.reset(new occupancy_map_monitor::OccupancyMapMonitor(tf_, scene_->getPlanningFrame()));
+      octomap_monitor_.reset(new occupancy_map_monitor::OccupancyMapMonitor<occupancy_map_monitor::OccMapTree>(tf_, scene_->getPlanningFrame()));
       excludeRobotLinksFromOctree();
       excludeAttachedBodiesFromOctree();
       excludeWorldObjectsFromOctree();
@@ -1085,6 +1088,19 @@ void planning_scene_monitor::PlanningSceneMonitor::startWorldGeometryMonitor(
       octomap_monitor_->setTransformCacheCallback(
           boost::bind(&PlanningSceneMonitor::getShapeTransformCache, this, _1, _2, _3));
       octomap_monitor_->setUpdateCallback(boost::bind(&PlanningSceneMonitor::octomapUpdateCallback, this));
+    }
+    octomap_monitor_->startMonitor();
+  }else{
+    if (!octomap_monitor_)
+    {
+      octomap_monitor_.reset(new occupancy_map_monitor::OccupancyMapMonitor<occupancy_map_monitor::EsdfMap>(tf_, scene_->getPlanningFrame()));
+      excludeRobotLinksFromOctree();
+      excludeAttachedBodiesFromOctree();
+      excludeWorldObjectsFromOctree();
+
+      octomap_monitor_->setTransformCacheCallback(
+          boost::bind(&PlanningSceneMonitor::getShapeTransformCache, this, _1, _2, _3));
+      octomap_monitor_->setUpdateCallback(boost::bind(&PlanningSceneMonitor::esdfUpdateCallback, this));
     }
     octomap_monitor_->startMonitor();
   }
@@ -1210,6 +1226,9 @@ void planning_scene_monitor::PlanningSceneMonitor::stateUpdateTimerCallback(cons
   }
 }
 
+/**
+ * triggered after processing a pointcloud/ depth image...
+ */
 void planning_scene_monitor::PlanningSceneMonitor::octomapUpdateCallback()
 {
   if (!octomap_monitor_)
@@ -1222,17 +1241,41 @@ void planning_scene_monitor::PlanningSceneMonitor::octomapUpdateCallback()
     octomap_monitor_->getOcTreePtr()->lockRead();
     try
     {
-      scene_->processOctomapPtr(octomap_monitor_->getOcTreePtr(), Eigen::Affine3d::Identity());
+      scene_->processOctomapPtr(std::dynamic_pointer_cast<occupancy_map_monitor::OccMapTree, collision_detection::MoveitMap>(octomap_monitor_->getOcTreePtr()), Eigen::Affine3d::Identity());
       octomap_monitor_->getOcTreePtr()->unlockRead();
     }
     catch (...)
     {
       octomap_monitor_->getOcTreePtr()->unlockRead();  // unlock and rethrow
-      throw;
+      ROS_ERROR("scene could not process octomap, probably because octomap_monitor_ is now esdf :)");
+      //throw;
     }
   }
   triggerSceneUpdateEvent(UPDATE_GEOMETRY);
 }
+
+void planning_scene_monitor::PlanningSceneMonitor::esdfUpdateCallback()
+{
+  if (!octomap_monitor_)
+    return;
+  updateFrameTransforms();
+  {
+    boost::unique_lock<boost::shared_mutex> ulock(scene_update_mutex_);
+    last_update_time_ = ros::Time::now();
+    octomap_monitor_->getOcTreePtr()->lockRead();
+    try
+    {
+      scene_->processMapPtr(octomap_monitor_->getOcTreePtr(), Eigen::Affine3d::Identity());
+      octomap_monitor_->getOcTreePtr()->unlockRead();
+    }
+    catch (...)
+    {
+      octomap_monitor_->getOcTreePtr()->unlockRead();  // unlock
+    }
+  }
+  triggerSceneUpdateEvent(UPDATE_GEOMETRY);
+}
+
 
 void planning_scene_monitor::PlanningSceneMonitor::setStateUpdateFrequency(double hz)
 {

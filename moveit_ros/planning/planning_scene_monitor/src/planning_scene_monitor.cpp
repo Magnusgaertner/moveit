@@ -174,6 +174,7 @@ void planning_scene_monitor::PlanningSceneMonitor::initialize(const planning_sce
 {
   moveit::tools::Profiler::ScopedStart prof_start;
   moveit::tools::Profiler::ScopedBlock prof_block("PlanningSceneMonitor::initialize");
+  ROS_ERROR("initializing planning scene");
 
   if (monitor_name_.empty())
     monitor_name_ = "planning_scene_monitor";
@@ -248,6 +249,7 @@ void planning_scene_monitor::PlanningSceneMonitor::initialize(const planning_sce
                                             false);  // do not start the timer yet
 
   reconfigure_impl_ = new DynamicReconfigureImpl(this);
+  //ROS_ERROR("move groups planning scene monitor uses active collision detector: %s",scene->getActiveCollisionDetectorName());
 }
 
 void planning_scene_monitor::PlanningSceneMonitor::monitorDiffs(bool flag)

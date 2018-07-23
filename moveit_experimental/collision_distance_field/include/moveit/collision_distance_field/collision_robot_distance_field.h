@@ -43,6 +43,7 @@
 #include <moveit/collision_distance_field/collision_common_distance_field.h>
 #include <moveit/planning_scene/planning_scene.h>
 #include <boost/thread/mutex.hpp>
+#include <std_srvs/Empty.h>
 
 namespace collision_detection
 {
@@ -268,7 +269,9 @@ protected:
   planning_scene::PlanningScenePtr planning_scene_;
   ros::Publisher marker_pub;
 
-  void show();
+  bool show(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
+
+  ros::ServiceServer service_server;
 };
 }
 

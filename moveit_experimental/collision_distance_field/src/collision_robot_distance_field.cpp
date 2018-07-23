@@ -127,15 +127,21 @@ void CollisionRobotDistanceField::initialize(
     getGroupStateRepresentation(dfce, state, pregenerated_group_state_representation_map_[jm->getName()]);
   }
 
-  static ros::NodeHandle n;
+  ros::NodeHandle n("");
+  service_server = n.advertiseService("publish_robot_sphere_decomposition", &CollisionRobotDistanceField::show, this);
   marker_pub = n.advertise<visualization_msgs::MarkerArray>("RobotSphereDecomposition", 1, true);
-  show();
 }
 
-  void CollisionRobotDistanceField::show() {
-    auto model_marker;
-    createCollisionModelMarker(*(getLastDistanceFieldEntry()->state_), model_marker);
+  bool CollisionRobotDistanceField::show(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res) {
+    ROS_ERROR("show called!");
+    moveit::core::RobotState state(robot_model_);
+    state.update(true);
+    visualization_msgs::MarkerArray model_marker;
+    GroupStateRepresentationPtr gsr;
+    generateCollisionCheckingStructures("arm_group", state, NULL, gsr, true);
+    createCollisionModelMarker(state, model_marker);
     marker_pub.publish(model_marker);
+    return true;
   }
 
 void CollisionRobotDistanceField::generateCollisionCheckingStructures(

@@ -36,10 +36,6 @@
 
 #include <moveit/robot_model/robot_model.h>
 #include <moveit/collision_distance_field/collision_robot_distance_field.h>
-#include <moveit/collision_distance_field/collision_common_distance_field.h>
-#include <moveit/distance_field/propagation_distance_field.h>
-#include <ros/console.h>
-#include <ros/assert.h>
 #include <eigen_conversions/eigen_msg.h>
 
 namespace collision_detection
@@ -130,7 +126,17 @@ void CollisionRobotDistanceField::initialize(
         generateDistanceFieldCacheEntry(jm->getName(), state, &planning_scene_->getAllowedCollisionMatrix(), false);
     getGroupStateRepresentation(dfce, state, pregenerated_group_state_representation_map_[jm->getName()]);
   }
+
+  static ros::NodeHandle n;
+  marker_pub = n.advertise<visualization_msgs::MarkerArray>("RobotSphereDecomposition", 1, true);
+  show();
 }
+
+  void CollisionRobotDistanceField::show() {
+    auto model_marker;
+    createCollisionModelMarker(*(getLastDistanceFieldEntry()->state_), model_marker);
+    marker_pub.publish(model_marker);
+  }
 
 void CollisionRobotDistanceField::generateCollisionCheckingStructures(
     const std::string& group_name, const moveit::core::RobotState& state,

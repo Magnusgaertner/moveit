@@ -60,6 +60,7 @@ class CollisionRobotDistanceField : public CollisionRobot
 {
   friend class CollisionWorldDistanceField;
 
+  friend class MyCollisionWorld;
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -265,6 +266,9 @@ protected:
   std::map<std::string, GroupStateRepresentationPtr> pregenerated_group_state_representation_map_;
 
   planning_scene::PlanningScenePtr planning_scene_;
+  ros::Publisher marker_pub;
+
+  void show();
 };
 }
 

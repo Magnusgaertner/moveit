@@ -127,7 +127,7 @@ void CollisionRobotDistanceField::initialize(
     getGroupStateRepresentation(dfce, state, pregenerated_group_state_representation_map_[jm->getName()]);
   }
 
-  ros::NodeHandle n("");
+  ros::NodeHandle n("~");
   service_server = n.advertiseService("publish_robot_sphere_decomposition", &CollisionRobotDistanceField::show, this);
   marker_pub = n.advertise<visualization_msgs::MarkerArray>("RobotSphereDecomposition", 1, true);
 }

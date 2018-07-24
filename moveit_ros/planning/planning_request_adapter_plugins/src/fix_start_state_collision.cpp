@@ -113,7 +113,7 @@ public:
 
       if (creq.group_name.empty())
         ROS_INFO("Start state appears to be in collision");
-      else
+      else //TODO RobotCollisionDistanceField bugs here
         ROS_INFO_STREAM("Start state appears to be in collision with respect to group " << creq.group_name);
 
       robot_state::RobotStatePtr prefix_state(new robot_state::RobotState(start_state));

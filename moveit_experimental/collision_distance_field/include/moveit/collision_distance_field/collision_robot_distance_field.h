@@ -82,6 +82,7 @@ public:
                               double scale = 1.0);
 
   CollisionRobotDistanceField(const CollisionRobotDistanceField& other);
+  virtual  ~CollisionRobotDistanceField();
 
   void initialize(const std::map<std::string, std::vector<CollisionSphere>>& link_body_decompositions,
                   const Eigen::Vector3d& size, const Eigen::Vector3d& origin, bool use_signed_distance_field,

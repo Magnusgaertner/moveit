@@ -273,6 +273,8 @@ protected:
   bool show(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
 
   ros::ServiceServer service_server;
+
+    bool showState(const moveit::core::RobotState &state) const;
 };
 }
 

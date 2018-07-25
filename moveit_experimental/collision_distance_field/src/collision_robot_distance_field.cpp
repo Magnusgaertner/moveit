@@ -136,12 +136,13 @@ void CollisionRobotDistanceField::initialize(
   }
 
   ros::NodeHandle n("~");
+  service_server.shutdown();
   service_server = n.advertiseService("publish_robot_sphere_decomposition", &CollisionRobotDistanceField::show, this);
   marker_pub = n.advertise<visualization_msgs::MarkerArray>("RobotSphereDecomposition", 1, true);
 }
 
   bool CollisionRobotDistanceField::show(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res) {
-    ROS_ERROR("show called!");
+    //ROS_ERROR("show called!");
     moveit::core::RobotState state(robot_model_);
     state.update(true);
     visualization_msgs::MarkerArray model_marker;
@@ -151,6 +152,16 @@ void CollisionRobotDistanceField::initialize(
     marker_pub.publish(model_marker);
     return true;
   }
+
+    bool CollisionRobotDistanceField::showState(const moveit::core::RobotState& state) const{
+        //ROS_ERROR("show called!");
+        visualization_msgs::MarkerArray model_marker;
+        GroupStateRepresentationPtr gsr;
+        generateCollisionCheckingStructures("arm_group", state, NULL, gsr, true);
+        createCollisionModelMarker(state, model_marker);
+        marker_pub.publish(model_marker);
+        return true;
+    }
 
 void CollisionRobotDistanceField::generateCollisionCheckingStructures(
     const std::string& group_name, const moveit::core::RobotState& state,
@@ -178,6 +189,7 @@ void CollisionRobotDistanceField::checkSelfCollisionHelper(const collision_detec
                                                            const collision_detection::AllowedCollisionMatrix* acm,
                                                            GroupStateRepresentationPtr& gsr) const
 {
+
     SWRI_PROFILE("CollisionRobotDistanceField::checkSelfCollisionHelper");
   if (!gsr)
   {
@@ -193,12 +205,14 @@ void CollisionRobotDistanceField::checkSelfCollisionHelper(const collision_detec
   if (!done)
   {
     getIntraGroupCollisions(req, res, gsr);
-    ROS_DEBUG_COND(res.collision, "Intra Group Collision found");
+    //ROS_DEBUG_COND(res.collision, "Intra Group Collision found");
   }
   if(res.collision){
-      ROS_ERROR("robot in collision!");
+      //ROS_ERROR("robot in collision!");
       res.collision = false;
   }
+  //ROS_INFO("show state");
+  showState(state);
 }
 
 DistanceFieldCacheEntryConstPtr CollisionRobotDistanceField::getDistanceFieldCacheEntry(
@@ -208,24 +222,24 @@ DistanceFieldCacheEntryConstPtr CollisionRobotDistanceField::getDistanceFieldCac
   DistanceFieldCacheEntryConstPtr ret;
   if (!distance_field_cache_entry_)
   {
-    ROS_DEBUG_STREAM("No current Distance field cache entry");
+    //ROS_DEBUG_STREAM("No current Distance field cache entry");
     return ret;
   }
   DistanceFieldCacheEntryConstPtr cur = distance_field_cache_entry_;
   if (group_name != cur->group_name_)
   {
-    ROS_DEBUG("No cache entry as group name changed from %s to %s", cur->group_name_.c_str(), group_name.c_str());
+    //ROS_DEBUG("No cache entry as group name changed from %s to %s", cur->group_name_.c_str(), group_name.c_str());
     return ret;
   }
   else if (!compareCacheEntryToState(cur, state))
   {
     // Regenerating distance field as state has changed from last time
-     ROS_DEBUG_STREAM_NAMED("collision_distance_field", "Regenerating distance field as state has changed from last time");
+     //ROS_DEBUG_STREAM_NAMED("collision_distance_field", "Regenerating distance field as state has changed from last time");
     return ret;
   }
   else if (acm && !compareCacheEntryToAllowedCollisionMatrix(cur, *acm))
   {
-    ROS_DEBUG("Regenerating distance field as some relevant part of the acm changed");
+    //ROS_DEBUG("Regenerating distance field as some relevant part of the acm changed");
     return ret;
   }
   return cur;
@@ -320,7 +334,7 @@ bool CollisionRobotDistanceField::getSelfCollisions(const collision_detection::C
             con.body_name_1 = gsr->dfce_->attached_body_names_[i - gsr->dfce_->link_names_.size()];
           }
 
-          ROS_DEBUG_STREAM("Self collision detected for link " << con.body_name_1);
+          //ROS_DEBUG_STREAM("Self collision detected for link " << con.body_name_1);
 
           con.body_type_2 = collision_detection::BodyTypes::ROBOT_LINK;
           con.body_name_2 = "self";
@@ -342,7 +356,7 @@ bool CollisionRobotDistanceField::getSelfCollisions(const collision_detection::C
                                               *sphere_centers_1, max_propogation_distance_, collision_tolerance_);
       if (coll)
       {
-        ROS_DEBUG("Link %s in self collision", gsr->dfce_->link_names_[i].c_str());
+        //ROS_DEBUG("Link %s in self collision", gsr->dfce_->link_names_[i].c_str());
         res.collision = true;
         return true;
       }
@@ -454,7 +468,7 @@ bool CollisionRobotDistanceField::getIntraGroupCollisions(const collision_detect
       if (i_is_link && j_is_link &&
           !doBoundingSpheresIntersect(gsr->link_body_decompositions_[i], gsr->link_body_decompositions_[j]))
       {
-        ROS_DEBUG_STREAM("Bounding spheres for " <<gsr->dfce_->link_names_[i] << " and " << gsr->dfce_->link_names_[j]<< " don't intersect");
+        //ROS_DEBUG_STREAM("Bounding spheres for " <<gsr->dfce_->link_names_[i] << " and " << gsr->dfce_->link_names_[j]<< " don't intersect");
         continue;
       }
       else if (!i_is_link || !j_is_link)
@@ -1113,6 +1127,7 @@ CollisionRobotDistanceField::getPosedLinkBodyPointDecomposition(const moveit::co
 void CollisionRobotDistanceField::updateGroupStateRepresentationState(const moveit::core::RobotState& state,
                                                                       GroupStateRepresentationPtr& gsr) const
 {
+  showState(state);
     SWRI_PROFILE("CollisionRobotDistanceField::updateGroupStateRepresentationState");
     {
         SWRI_PROFILE("CollisionRobotDistanceField::updateGroupStateRepresentationState_links");

@@ -319,8 +319,8 @@ void collision_detection::BodyDecomposition::init(const std::vector<shapes::Shap
   }
   bodies::mergeBoundingSpheres(bounding_spheres, relative_bounding_sphere_);
 
-  ROS_INFO_STREAM("BodyDecomposition generated " << collision_spheres_.size() << " collision spheres out of "
-                                                  << shapes.size() << " shapes");
+  //ROS_INFO_STREAM("BodyDecomposition generated " << collision_spheres_.size() << " collision spheres out of "
+  //                                                << shapes.size() << " shapes");
 }
 
 collision_detection::BodyDecomposition::~BodyDecomposition()

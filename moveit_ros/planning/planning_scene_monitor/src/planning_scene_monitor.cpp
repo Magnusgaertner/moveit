@@ -174,7 +174,7 @@ void planning_scene_monitor::PlanningSceneMonitor::initialize(const planning_sce
 {
   moveit::tools::Profiler::ScopedStart prof_start;
   moveit::tools::Profiler::ScopedBlock prof_block("PlanningSceneMonitor::initialize");
-  ROS_ERROR("initializing planning scene");
+  //ROS_ERROR("initializing planning scene");
 
   if (monitor_name_.empty())
     monitor_name_ = "planning_scene_monitor";

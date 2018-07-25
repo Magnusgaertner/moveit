@@ -40,6 +40,7 @@
 #include <moveit/distance_field/find_internal_points.h>
 #include <ros/console.h>
 #include <memory>
+#include <swri_profiler/profiler.h>
 
 const static double RESOLUTION_SCALE = 1.0;
 const static double EPSILON = 0.0001;
@@ -297,10 +298,11 @@ void collision_detection::BodyDecomposition::init(const std::vector<shapes::Shap
 
     body_spheres = determineCollisionSpheres(bodies_.getBody(i), relative_cylinder_pose_);
     collision_spheres_.insert(collision_spheres_.end(), body_spheres.begin(), body_spheres.end());
-
+/*
     distance_field::findInternalPointsConvex(*bodies_.getBody(i), resolution, body_collision_points);
+    ROS_INFO("inserting %d body collision points, resulution is %f", body_collision_points.size(), resolution);
     relative_collision_points_.insert(relative_collision_points_.end(), body_collision_points.begin(),
-                                      body_collision_points.end());
+                                      body_collision_points.end());*/
   }
 
   sphere_radii_.resize(collision_spheres_.size());
@@ -317,7 +319,7 @@ void collision_detection::BodyDecomposition::init(const std::vector<shapes::Shap
   }
   bodies::mergeBoundingSpheres(bounding_spheres, relative_bounding_sphere_);
 
-  ROS_DEBUG_STREAM("BodyDecomposition generated " << collision_spheres_.size() << " collision spheres out of "
+  ROS_INFO_STREAM("BodyDecomposition generated " << collision_spheres_.size() << " collision spheres out of "
                                                   << shapes.size() << " shapes");
 }
 
@@ -377,10 +379,12 @@ collision_detection::PosedBodySphereDecomposition::PosedBodySphereDecomposition(
 
 void collision_detection::PosedBodySphereDecomposition::updatePose(const Eigen::Affine3d& trans)
 {
+
   // updating sphere centers
   posed_bounding_sphere_center_ = trans * body_decomposition_->getRelativeBoundingSphere().center;
   for (unsigned int i = 0; i < body_decomposition_->getCollisionSpheres().size(); i++)
   {
+    SWRI_PROFILE("update sphere center");
     sphere_centers_[i] = trans * body_decomposition_->getCollisionSpheres()[i].relative_vec_;
   }
 
@@ -390,6 +394,7 @@ void collision_detection::PosedBodySphereDecomposition::updatePose(const Eigen::
     posed_collision_points_.resize(body_decomposition_->getCollisionPoints().size());
     for (unsigned int i = 0; i < body_decomposition_->getCollisionPoints().size(); i++)
     {
+        SWRI_PROFILE("update collision points");
       posed_collision_points_[i] = trans * body_decomposition_->getCollisionPoints()[i];
     }
   }

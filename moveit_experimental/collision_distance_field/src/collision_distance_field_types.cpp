@@ -224,6 +224,9 @@ bool collision_detection::getCollisionSphereCollision(const distance_field::Dist
                                                       double maximum_value, double tolerance, unsigned int num_coll,
                                                       std::vector<unsigned int>& colls)
 {
+    static int in_collision_stat_pos = 0;
+    static int in_collision_stat_neg = 0;
+
   colls.clear();
   for (unsigned int i = 0; i < sphere_list.size(); i++)
   {
@@ -233,24 +236,36 @@ bool collision_detection::getCollisionSphereCollision(const distance_field::Dist
     double dist = distance_field->getDistanceGradient(p.x(), p.y(), p.z(), grad.x(), grad.y(), grad.z(), in_bounds);
     if (!in_bounds && (grad.norm() > 0))
     {
+        in_collision_stat_pos++;
       ROS_DEBUG("Collision sphere point is out of bounds");
+        ROS_INFO("in_collision stat: %d pos/ %d neg ", in_collision_stat_pos, in_collision_stat_neg);
       return true;
     }
     if (maximum_value > dist && (sphere_list[i].radius_ - dist > tolerance))
     {
       if (num_coll == 0)
       {
+          in_collision_stat_pos++;
+          ROS_INFO("in_collision stat: %d pos/ %d neg ", in_collision_stat_pos, in_collision_stat_neg);
         return true;
       }
 
       colls.push_back(i);
       if (colls.size() >= num_coll)
       {
+          in_collision_stat_pos++;
+          ROS_INFO("in_collision stat: %d pos/ %d neg ", in_collision_stat_pos, in_collision_stat_neg);
         return true;
       }
     }
   }
 
+    if(colls.size()>0){
+        in_collision_stat_pos++;
+    }else{
+        in_collision_stat_neg++;
+    }
+  ROS_INFO("in_collision stat: %d pos/ %d neg ", in_collision_stat_pos, in_collision_stat_neg);
   return colls.size() > 0;
 }
 

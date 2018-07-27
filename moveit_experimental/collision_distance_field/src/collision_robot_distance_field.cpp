@@ -212,7 +212,7 @@ void CollisionRobotDistanceField::checkSelfCollisionHelper(const collision_detec
       res.collision = false;
   }
   //ROS_INFO("show state");
-  showState(state);
+  //showState(state);
 }
 
 DistanceFieldCacheEntryConstPtr CollisionRobotDistanceField::getDistanceFieldCacheEntry(
@@ -1127,7 +1127,7 @@ CollisionRobotDistanceField::getPosedLinkBodyPointDecomposition(const moveit::co
 void CollisionRobotDistanceField::updateGroupStateRepresentationState(const moveit::core::RobotState& state,
                                                                       GroupStateRepresentationPtr& gsr) const
 {
-  showState(state);
+
     SWRI_PROFILE("CollisionRobotDistanceField::updateGroupStateRepresentationState");
     {
         SWRI_PROFILE("CollisionRobotDistanceField::updateGroupStateRepresentationState_links");
@@ -1185,6 +1185,7 @@ void CollisionRobotDistanceField::updateGroupStateRepresentationState(const move
                     gsr->attached_body_decompositions_[i]->getSphereCenters();
         }
     }
+    showState(state);
 }
 
 void CollisionRobotDistanceField::getGroupStateRepresentation(const DistanceFieldCacheEntryConstPtr& dfce,

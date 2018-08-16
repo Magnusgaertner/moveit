@@ -209,7 +209,7 @@ void CollisionRobotDistanceField::checkSelfCollisionHelper(const collision_detec
   }
   if(res.collision){
       //ROS_ERROR("robot in collision!");
-      res.collision = false;
+      //res.collision = false;
   }
   //ROS_INFO("show state");
   //showState(state);
@@ -520,7 +520,7 @@ bool CollisionRobotDistanceField::getIntraGroupCollisions(const collision_detect
         {
           continue;
         }
-        std::cerr << "Bounding spheres for " << gsr->dfce_->link_names_[i] << " and " << gsr->dfce_->link_names_[j] << " intersect" << std::endl;
+        //std::cerr << "Bounding spheres for " << gsr->dfce_->link_names_[i] << " and " << gsr->dfce_->link_names_[j] << " intersect" << std::endl;
       }
       int num_pair = -1;
       std::string name_1;
@@ -586,14 +586,14 @@ bool CollisionRobotDistanceField::getIntraGroupCollisions(const collision_detect
         {
           Eigen::Vector3d gradient = (*sphere_centers_1)[k] - (*sphere_centers_2)[l];
           double dist = gradient.norm();
-           std::cerr << "Dist is " << dist << " rad " << (*collision_spheres_1)[k].radius_+(*collision_spheres_2)[l].radius_ << std::endl;
+           //std::cerr << "Dist is " << dist << " rad " << (*collision_spheres_1)[k].radius_+(*collision_spheres_2)[l].radius_ << std::endl;
 
           if (dist < (*collision_spheres_1)[k].radius_ + (*collision_spheres_2)[l].radius_)
           {
-                        ROS_DEBUG("Intra-group contact between %s and %s, d = %f <  r1 = %f + r2 = %f", name_1.c_str(), name_2.c_str(), dist ,(*collision_spheres_1)[k].radius_,(*collision_spheres_2)[l].radius_);
+                        //ROS_DEBUG("Intra-group contact between %s and %s, d = %f <  r1 = %f + r2 = %f", name_1.c_str(), name_2.c_str(), dist ,(*collision_spheres_1)[k].radius_,(*collision_spheres_2)[l].radius_);
                         Eigen::Vector3d sc1 = (*sphere_centers_1)[k];
                         Eigen::Vector3d sc2 = (*sphere_centers_2)[l];
-                        ROS_DEBUG("sphere center 1:[ %f, %f, %f ], sphere center 2: [%f, %f,%f ], lbdc size =%i",sc1[0],sc1[1],sc1[2],sc2[0],sc2[1],sc2[2],int(gsr->link_body_decompositions_.size()));
+                        //ROS_DEBUG("sphere center 1:[ %f, %f, %f ], sphere center 2: [%f, %f,%f ], lbdc size =%i",sc1[0],sc1[1],sc1[2],sc2[0],sc2[1],sc2[2],int(gsr->link_body_decompositions_.size()));
             res.collision = true;
 
             if (req.contacts)
@@ -621,12 +621,12 @@ bool CollisionRobotDistanceField::getIntraGroupCollisions(const collision_detect
               res.contact_count++;
               res.contacts[std::pair<std::string, std::string>(con.body_name_1, con.body_name_2)].push_back(con);
               num_pair++;
-              std::cerr << "Pushing back intra " << con.body_name_1 << " and " << con.body_name_2 << std::endl;
+              //std::cerr << "Pushing back intra " << con.body_name_1 << " and " << con.body_name_2 << std::endl;
               gsr->gradients_[i].types[k] = INTRA;
               gsr->gradients_[i].collision = true;
               gsr->gradients_[j].types[l] = INTRA;
               gsr->gradients_[j].collision = true;
-               ROS_INFO_STREAM("Sphere 1 " << (*sphere_centers_1)[k]);
+               /*ROS_INFO_STREAM("Sphere 1 " << (*sphere_centers_1)[k]);
                ROS_INFO_STREAM("Sphere 2 " << (*sphere_centers_2)[l]);
                ROS_INFO_STREAM("Norm " << gradient.norm());
                ROS_INFO_STREAM("Dist is " << dist
@@ -638,7 +638,7 @@ bool CollisionRobotDistanceField::getIntraGroupCollisions(const collision_detect
                ROS_INFO_STREAM("Spheres intersect for " <<
                gsr->dfce_->link_names_[i] << " and " <<
                gsr->dfce_->link_names_[j]);
-               std::cerr << "Spheres intersect for " << gsr->dfce_->link_names_[i] << " and " << gsr->dfce_->link_names_[j] << std::endl;
+               std::cerr << "Spheres intersect for " << gsr->dfce_->link_names_[i] << " and " << gsr->dfce_->link_names_[j] << std::endl;*/
               if (res.contact_count >= req.max_contacts)
               {
                 return true;

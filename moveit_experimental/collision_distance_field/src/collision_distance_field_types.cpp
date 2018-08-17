@@ -236,46 +236,31 @@ bool collision_detection::getCollisionSphereCollision(const distance_field::Dist
     Eigen::Vector3d p = sphere_centers[i];
     Eigen::Vector3d grad;
     bool in_bounds = true;
-    double dist = distance_field->getDistanceGradient(p.x(), p.y(), p.z(), grad.x(), grad.y(), grad.z(), in_bounds);
+    double dist = distance_field->getDistance(p.x(), p.y(), p.z());
 
     if(!in_bounds){
-      //ROS_INFO("position: %f, %f, %f out of bound", p.x(), p.y(), p.z());
-      //ROS_INFO("position: %f, %f, %f; grad: %f, %f, %f: dist: %f,\tin bounds: %b", p.x(), p.y(), p.z(),grad.x(), grad.y(), grad.z(), dist, in_bounds);
       continue;
     }
     //ROS_INFO("position: %f, %f, %f; grad: %f, %f, %f: dist: %f,\tin bounds: %b", p.x(), p.y(), p.z(),grad.x(), grad.y(), grad.z(), dist, in_bounds);
     if (!in_bounds && (grad.norm() > 0))
     {
-        in_collision_stat_pos++;
-      //ROS_DEBUG("Collision sphere point is out of bounds");
-        //ROS_INFO("in_collision stat: %d pos/ %d neg ", in_collision_stat_pos, in_collision_stat_neg);
       return true;
     }
-    if (maximum_value > dist && (sphere_list[i].radius_ - dist > tolerance))
+    if ((sphere_list[i].radius_ - dist)>=0 && sphere_list[i].radius_<1.5)
     {
       if (num_coll == 0)
       {
-          in_collision_stat_pos++;
-          //ROS_INFO("in_collision stat: %d pos/ %d neg ", in_collision_stat_pos, in_collision_stat_neg);
         return true;
       }
 
       colls.push_back(i);
       if (colls.size() >= num_coll)
       {
-          in_collision_stat_pos++;
-          //ROS_INFO("in_collision stat: %d pos/ %d neg ", in_collision_stat_pos, in_collision_stat_neg);
         return true;
       }
     }
   }
 
-    if(colls.size()>0){
-        in_collision_stat_pos++;
-    }else{
-        in_collision_stat_neg++;
-    }
-  //ROS_INFO("in_collision stat: %d pos/ %d neg ", in_collision_stat_pos, in_collision_stat_neg);
   return colls.size() > 0;
 }
 

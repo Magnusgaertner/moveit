@@ -1185,7 +1185,7 @@ void CollisionRobotDistanceField::updateGroupStateRepresentationState(const move
                     gsr->attached_body_decompositions_[i]->getSphereCenters();
         }
     }
-    showState(state);
+    //showState(state);
 }
 
 void CollisionRobotDistanceField::getGroupStateRepresentation(const DistanceFieldCacheEntryConstPtr& dfce,

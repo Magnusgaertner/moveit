@@ -484,7 +484,7 @@ protected:
   std::unique_ptr<tf::MessageFilter<moveit_msgs::CollisionObject> > collision_object_filter_;
 
   // include a octomap monitor
-  std::unique_ptr<occupancy_map_monitor::OccupancyMapMonitor> octomap_monitor_;
+  std::unique_ptr<occupancy_map_monitor::OccupancyMapMonitor<occupancy_map_monitor::OccMapTree> > octomap_monitor_;
 
   // include a current state monitor
   CurrentStateMonitorPtr current_state_monitor_;

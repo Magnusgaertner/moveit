@@ -39,9 +39,10 @@
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <moveit/occupancy_map_monitor/occupancy_map_monitor.h>
+#include <moveit/occupancy_map_monitor/occupancy_map.h>
 #include <octomap_msgs/conversions.h>
 
-static void publishOctomap(ros::Publisher* octree_binary_pub, occupancy_map_monitor::OccupancyMapMonitor* server)
+static void publishOctomap(ros::Publisher* octree_binary_pub, occupancy_map_monitor::OccupancyMapMonitor<occupancy_map_monitor::OccMapTree>* server)
 {
   octomap_msgs::Octomap map;
 
@@ -69,7 +70,7 @@ int main(int argc, char** argv)
   ros::NodeHandle nh;
   ros::Publisher octree_binary_pub = nh.advertise<octomap_msgs::Octomap>("octomap_binary", 1);
   boost::shared_ptr<tf::Transformer> listener = boost::make_shared<tf::TransformListener>(ros::Duration(5.0));
-  occupancy_map_monitor::OccupancyMapMonitor server(listener);
+  occupancy_map_monitor::OccupancyMapMonitor<occupancy_map_monitor::OccMapTree> server(listener);
   server.setUpdateCallback(boost::bind(&publishOctomap, &octree_binary_pub, &server));
   server.startMonitor();
 

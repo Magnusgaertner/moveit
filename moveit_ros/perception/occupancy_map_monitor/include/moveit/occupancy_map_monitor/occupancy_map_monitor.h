@@ -54,8 +54,11 @@
 
 namespace occupancy_map_monitor
 {
+  template <typename MapType>
 class OccupancyMapMonitor
 {
+  MOVEIT_DECLARE_PTR(MapType, MapType);
+  MOVEIT_DECLARE_PTR(OccupancyMapUpdater, OccupancyMapUpdater<MapType>);
 public:
   OccupancyMapMonitor(const boost::shared_ptr<tf::Transformer>& tf, const std::string& map_frame = "",
                       double map_resolution = 0.0);
@@ -70,18 +73,21 @@ public:
 
   void stopMonitor();
 
-  /** @brief Get a pointer to the underlying octree for this monitor. Lock the tree before reading or writing using this
+  /** @brief Get a pointer to the underlying map for this monitor. Lock the map before reading or writing using this
    *  pointer. The value of this pointer stays the same throughout the existance of the monitor instance. */
-  const OccMapTreePtr& getOcTreePtr()
+  //as this is part of a public interface the function is not renamed to i.e getMapPtr()
+  const MapTypePtr& getOcTreePtr()
   {
-    return tree_;
+    return map_;
   }
+
 
   /** @brief Get a const pointer to the underlying octree for this monitor. Lock the
    *  tree before reading this pointer */
-  const OccMapTreeConstPtr& getOcTreePtr() const
+  //as this is part of a public interface the function is not renamed to i.e getMapPtr()
+  const MapTypeConstPtr& getOcTreePtr() const
   {
-    return tree_const_;
+    return map_const_;
   }
 
   const std::string& getMapFrame() const
@@ -112,7 +118,7 @@ public:
   /** @brief Set the callback to trigger when updates to the maintained octomap are received */
   void setUpdateCallback(const boost::function<void()>& update_callback)
   {
-    tree_->setUpdateCallback(update_callback);
+    map_->setUpdateCallback(update_callback);
   }
 
   void setTransformCacheCallback(const TransformCacheProvider& transform_cache_callback);
@@ -141,10 +147,10 @@ private:
   double map_resolution_;
   boost::mutex parameters_lock_;
 
-  OccMapTreePtr tree_;
-  OccMapTreeConstPtr tree_const_;
+  MapTypePtr map_;
+  MapTypeConstPtr map_const_;
 
-  std::unique_ptr<pluginlib::ClassLoader<OccupancyMapUpdater> > updater_plugin_loader_;
+  std::unique_ptr<pluginlib::ClassLoader<OccupancyMapUpdater<MapType> > > updater_plugin_loader_;
   std::vector<OccupancyMapUpdaterPtr> map_updaters_;
   std::vector<std::map<ShapeHandle, ShapeHandle> > mesh_handles_;
   TransformCacheProvider transform_cache_callback_;

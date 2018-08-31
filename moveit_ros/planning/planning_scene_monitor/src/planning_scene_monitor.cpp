@@ -1066,7 +1066,7 @@ void planning_scene_monitor::PlanningSceneMonitor::startWorldGeometryMonitor(
   {
     if (!octomap_monitor_)
     {
-      octomap_monitor_.reset(new occupancy_map_monitor::OccupancyMapMonitor(tf_, scene_->getPlanningFrame()));
+      octomap_monitor_.reset(new occupancy_map_monitor::OccupancyMapMonitor<occupancy_map_monitor::OccMapTree>(tf_, scene_->getPlanningFrame()));
       excludeRobotLinksFromOctree();
       excludeAttachedBodiesFromOctree();
       excludeWorldObjectsFromOctree();

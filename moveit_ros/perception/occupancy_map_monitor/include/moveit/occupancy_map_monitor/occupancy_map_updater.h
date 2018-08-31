@@ -53,20 +53,24 @@ typedef std::map<ShapeHandle, Eigen::Affine3d, std::less<ShapeHandle>,
 typedef boost::function<bool(const std::string& target_frame, const ros::Time& target_time, ShapeTransformCache& cache)>
     TransformCacheProvider;
 
+  template<typename MapType>
 class OccupancyMapMonitor;
 
-MOVEIT_CLASS_FORWARD(OccupancyMapUpdater);
+//MOVEIT_CLASS_FORWARD(OccupancyMapUpdater);
 
 /** \brief Base class for classes which update the occupancy map.
  */
+  template <typename  MapType>
 class OccupancyMapUpdater
 {
+  typedef std::shared_ptr<MapType> MapTypePtr;
+  typedef std::shared_ptr<const MapType> MapTypeConstPtr;
 public:
   OccupancyMapUpdater(const std::string& type);
   virtual ~OccupancyMapUpdater();
 
   /** \brief This is the first function to be called after construction */
-  void setMonitor(OccupancyMapMonitor* monitor);
+  void setMonitor(OccupancyMapMonitor<MapType>* monitor);
 
   /** @brief Set updater params using struct that comes from parsing a yaml string. This must be called after
    * setMonitor() */
@@ -100,9 +104,9 @@ public:
   }
 
 protected:
-  OccupancyMapMonitor* monitor_;
+  OccupancyMapMonitor<MapType>* monitor_;
   std::string type_;
-  OccMapTreePtr tree_;
+  MapTypePtr tree_;
   TransformCacheProvider transform_provider_callback_;
   ShapeTransformCache transform_cache_;
   bool debug_info_;

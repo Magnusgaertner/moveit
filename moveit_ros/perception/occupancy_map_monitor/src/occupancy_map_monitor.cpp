@@ -38,32 +38,41 @@
 #include <moveit_msgs/SaveMap.h>
 #include <moveit_msgs/LoadMap.h>
 #include <moveit/occupancy_map_monitor/occupancy_map.h>
+#include <moveit/occupancy_map_monitor/moveit_map.h>
 #include <moveit/occupancy_map_monitor/occupancy_map_monitor.h>
 #include <XmlRpcException.h>
 
+
 namespace occupancy_map_monitor
 {
-OccupancyMapMonitor::OccupancyMapMonitor(double map_resolution)
+  template class OccupancyMapMonitor<OccMapTree>;
+
+  template <typename  MapType>
+OccupancyMapMonitor<MapType>::OccupancyMapMonitor(double map_resolution)
   : map_resolution_(map_resolution), debug_info_(false), mesh_handle_count_(0), nh_("~"), active_(false)
 {
   initialize();
 }
 
-OccupancyMapMonitor::OccupancyMapMonitor(const boost::shared_ptr<tf::Transformer>& tf, const std::string& map_frame,
+
+  template <typename  MapType>
+  OccupancyMapMonitor<MapType>::OccupancyMapMonitor(const boost::shared_ptr<tf::Transformer>& tf, const std::string& map_frame,
                                          double map_resolution)
   : tf_(tf), map_frame_(map_frame), map_resolution_(map_resolution), debug_info_(false), mesh_handle_count_(0), nh_("~")
 {
   initialize();
 }
 
-OccupancyMapMonitor::OccupancyMapMonitor(const boost::shared_ptr<tf::Transformer>& tf, ros::NodeHandle& nh,
+  template <typename  MapType>
+  OccupancyMapMonitor<MapType>::OccupancyMapMonitor(const boost::shared_ptr<tf::Transformer>& tf, ros::NodeHandle& nh,
                                          const std::string& map_frame, double map_resolution)
   : tf_(tf), map_frame_(map_frame), map_resolution_(map_resolution), debug_info_(false), mesh_handle_count_(0), nh_(nh)
 {
   initialize();
 }
 
-void OccupancyMapMonitor::initialize()
+template <typename  MapType>
+void OccupancyMapMonitor<MapType>::initialize()
 {
   /* load params from param server */
   if (map_resolution_ <= std::numeric_limits<double>::epsilon())
@@ -82,8 +91,10 @@ void OccupancyMapMonitor::initialize()
   if (!tf_ && !map_frame_.empty())
     ROS_WARN("Target frame specified but no TF instance specified. No transforms will be applied to received data.");
 
-  tree_.reset(new OccMapTree(map_resolution_));
-  tree_const_ = tree_;
+  map_.reset(new MapType(map_resolution_));
+
+
+  map_const_ = map_;
 
   XmlRpc::XmlRpcValue sensor_list;
   if (nh_.getParam("sensors", sensor_list))
@@ -116,7 +127,7 @@ void OccupancyMapMonitor::initialize()
           {
             try
             {
-              updater_plugin_loader_.reset(new pluginlib::ClassLoader<OccupancyMapUpdater>(
+              updater_plugin_loader_.reset(new pluginlib::ClassLoader<OccupancyMapUpdater<MapType> >(
                   "moveit_ros_perception", "occupancy_map_monitor::OccupancyMapUpdater"));
             }
             catch (pluginlib::PluginlibException& ex)
@@ -165,11 +176,12 @@ void OccupancyMapMonitor::initialize()
   }
 
   /* advertise a service for loading octomaps from disk */
-  save_map_srv_ = nh_.advertiseService("save_map", &OccupancyMapMonitor::saveMapCallback, this);
-  load_map_srv_ = nh_.advertiseService("load_map", &OccupancyMapMonitor::loadMapCallback, this);
+  save_map_srv_ = nh_.advertiseService("save_map", &OccupancyMapMonitor<MapType>::saveMapCallback, this);
+  load_map_srv_ = nh_.advertiseService("load_map", &OccupancyMapMonitor<MapType>::loadMapCallback, this);
 }
 
-void OccupancyMapMonitor::addUpdater(const OccupancyMapUpdaterPtr& updater)
+template<typename MapType>
+void OccupancyMapMonitor<MapType>::addUpdater(const OccupancyMapUpdaterPtr& updater)
 {
   if (updater)
   {
@@ -182,13 +194,13 @@ void OccupancyMapMonitor::addUpdater(const OccupancyMapUpdaterPtr& updater)
           2)  // when we had one updater only, we passed direcly the transform cache callback to that updater
       {
         map_updaters_[0]->setTransformCacheCallback(
-            boost::bind(&OccupancyMapMonitor::getShapeTransformCache, this, 0, _1, _2, _3));
+            boost::bind(&OccupancyMapMonitor<MapType>::getShapeTransformCache, this, 0, _1, _2, _3));
         map_updaters_[1]->setTransformCacheCallback(
-            boost::bind(&OccupancyMapMonitor::getShapeTransformCache, this, 1, _1, _2, _3));
+            boost::bind(&OccupancyMapMonitor<MapType>::getShapeTransformCache, this, 1, _1, _2, _3));
       }
       else
         map_updaters_.back()->setTransformCacheCallback(
-            boost::bind(&OccupancyMapMonitor::getShapeTransformCache, this, map_updaters_.size() - 1, _1, _2, _3));
+            boost::bind(&OccupancyMapMonitor<MapType>::getShapeTransformCache, this, map_updaters_.size() - 1, _1, _2, _3));
     }
     else
       updater->setTransformCacheCallback(transform_cache_callback_);
@@ -197,20 +209,23 @@ void OccupancyMapMonitor::addUpdater(const OccupancyMapUpdaterPtr& updater)
     ROS_ERROR("NULL updater was specified");
 }
 
-void OccupancyMapMonitor::publishDebugInformation(bool flag)
+  template<typename MapType>
+void OccupancyMapMonitor<MapType>::publishDebugInformation(bool flag)
 {
   debug_info_ = flag;
   for (std::size_t i = 0; i < map_updaters_.size(); ++i)
     map_updaters_[i]->publishDebugInformation(debug_info_);
 }
 
-void OccupancyMapMonitor::setMapFrame(const std::string& frame)
+  template<typename MapType>
+void OccupancyMapMonitor<MapType>::setMapFrame(const std::string& frame)
 {
   boost::mutex::scoped_lock _(parameters_lock_);  // we lock since an updater could specify a new frame for us
   map_frame_ = frame;
 }
 
-ShapeHandle OccupancyMapMonitor::excludeShape(const shapes::ShapeConstPtr& shape)
+  template<typename MapType>
+ShapeHandle OccupancyMapMonitor<MapType>::excludeShape(const shapes::ShapeConstPtr& shape)
 {
   // if we have just one updater, remove the additional level of indirection
   if (map_updaters_.size() == 1)
@@ -230,7 +245,8 @@ ShapeHandle OccupancyMapMonitor::excludeShape(const shapes::ShapeConstPtr& shape
   return h;
 }
 
-void OccupancyMapMonitor::forgetShape(ShapeHandle handle)
+  template<typename MapType>
+void OccupancyMapMonitor<MapType>::forgetShape(ShapeHandle handle)
 {
   // if we have just one updater, remove the additional level of indirection
   if (map_updaters_.size() == 1)
@@ -248,7 +264,8 @@ void OccupancyMapMonitor::forgetShape(ShapeHandle handle)
   }
 }
 
-void OccupancyMapMonitor::setTransformCacheCallback(const TransformCacheProvider& transform_callback)
+  template<typename MapType>
+void OccupancyMapMonitor<MapType>::setTransformCacheCallback(const TransformCacheProvider& transform_callback)
 {
   // if we have just one updater, we connect it directly to the transform provider
   if (map_updaters_.size() == 1)
@@ -256,8 +273,8 @@ void OccupancyMapMonitor::setTransformCacheCallback(const TransformCacheProvider
   else
     transform_cache_callback_ = transform_callback;
 }
-
-bool OccupancyMapMonitor::getShapeTransformCache(std::size_t index, const std::string& target_frame,
+  template<typename MapType>
+bool OccupancyMapMonitor<MapType>::getShapeTransformCache(std::size_t index, const std::string& target_frame,
                                                  const ros::Time& target_time, ShapeTransformCache& cache) const
 {
   if (transform_cache_callback_)
@@ -284,61 +301,61 @@ bool OccupancyMapMonitor::getShapeTransformCache(std::size_t index, const std::s
   else
     return false;
 }
-
-bool OccupancyMapMonitor::saveMapCallback(moveit_msgs::SaveMap::Request& request,
+  template<typename MapType>
+bool OccupancyMapMonitor<MapType>::saveMapCallback(moveit_msgs::SaveMap::Request& request,
                                           moveit_msgs::SaveMap::Response& response)
 {
   ROS_INFO("Writing map to %s", request.filename.c_str());
-  tree_->lockRead();
+  map_->lockRead();
   try
   {
-    response.success = tree_->writeBinary(request.filename);
+    response.success = map_->writeBinary(request.filename);
   }
   catch (...)
   {
     response.success = false;
   }
-  tree_->unlockRead();
+  map_->unlockRead();
   return true;
 }
-
-bool OccupancyMapMonitor::loadMapCallback(moveit_msgs::LoadMap::Request& request,
+  template<typename MapType>
+bool OccupancyMapMonitor<MapType>::loadMapCallback(moveit_msgs::LoadMap::Request& request,
                                           moveit_msgs::LoadMap::Response& response)
 {
   ROS_INFO("Reading map from %s", request.filename.c_str());
 
   /* load the octree from disk */
-  tree_->lockWrite();
+  map_->lockWrite();
   try
   {
-    response.success = tree_->readBinary(request.filename);
+    response.success = map_->readBinary(request.filename);
   }
   catch (...)
   {
     ROS_ERROR("Failed to load map from file");
     response.success = false;
   }
-  tree_->unlockWrite();
+  map_->unlockWrite();
 
   return true;
 }
-
-void OccupancyMapMonitor::startMonitor()
+  template<typename MapType>
+void OccupancyMapMonitor<MapType>::startMonitor()
 {
   active_ = true;
   /* initialize all of the occupancy map updaters */
   for (std::size_t i = 0; i < map_updaters_.size(); ++i)
     map_updaters_[i]->start();
 }
-
-void OccupancyMapMonitor::stopMonitor()
+  template<typename MapType>
+void OccupancyMapMonitor<MapType>::stopMonitor()
 {
   active_ = false;
   for (std::size_t i = 0; i < map_updaters_.size(); ++i)
     map_updaters_[i]->stop();
 }
-
-OccupancyMapMonitor::~OccupancyMapMonitor()
+  template<typename MapType>
+OccupancyMapMonitor<MapType>::~OccupancyMapMonitor()
 {
   stopMonitor();
 }

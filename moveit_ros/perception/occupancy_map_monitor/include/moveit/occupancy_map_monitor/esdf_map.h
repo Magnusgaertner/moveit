@@ -1,7 +1,7 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2011, Willow Garage, Inc.
+ *  Copyright (c) 2012, Willow Garage, Inc.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -32,31 +32,43 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/* Author: Jon Binney, Ioan Sucan */
+/* Author: Magnus Gärtner */
 
-#ifndef MOVEIT_PERCEPTION_POINTCLOUD_OCTOMAP_UPDATER_
-#define MOVEIT_PERCEPTION_POINTCLOUD_OCTOMAP_UPDATER_
+#ifndef MOVEIT_OCCUPANCY_MAP_MONITOR_ESDF_MAP_
+#define MOVEIT_OCCUPANCY_MAP_MONITOR_ESDF_MAP_
 
-#include <ros/ros.h>
-#include <tf/tf.h>
-#include <tf/message_filter.h>
-#include <message_filters/subscriber.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <moveit/occupancy_map_monitor/occupancy_map_updater.h>
-#include <moveit/point_containment_filter/shape_mask.h>
+//#include <octomap/octomap.h>
+//#include <voxblox_ros/esdf_server.h>
+namespace occupancy_map_monitor {
 
-#include <memory>
-#include "pointcloud_map_updater.h"
+  MOVEIT_CLASS_FORWARD(EsdfMap);
 
+  class EsdfMap : public MoveitMap {
+  public:
 
-namespace occupancy_map_monitor
-{
-class PointCloudOctomapUpdater : public PointCloudMapUpdater<OccMapTree> {
-public:
-  PointCloudOctomapUpdater():PointCloudMapUpdater(){}
-protected:
-  virtual void cloudMsgCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg) override;
-};
+    EsdfMap(double resolution) { init(); }
+
+    EsdfMap(const std::string &filename) { init(); }
+
+    void init() {
+      ros::NodeHandle nh;
+      ros::NodeHandle nh_private("~");
+      // vxblx.reset(new voxblox::EsdfServer(nh, nh_private));
+    }
+
+    inline virtual bool writeBinary(const std::string &filename) override {
+      //saveMap(filename);
+      return true;
+    }
+
+    inline virtual bool readBinary(const std::string &filename) override {
+      //loadMap(filename);
+      return true;
+    }
+
+  private:
+    //std::unique_ptr<voxblox::EsdfServer> vxblx;
+  };
 }
 
 #endif

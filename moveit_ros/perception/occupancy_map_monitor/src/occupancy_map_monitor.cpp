@@ -41,11 +41,13 @@
 #include <moveit/occupancy_map_monitor/moveit_map.h>
 #include <moveit/occupancy_map_monitor/occupancy_map_monitor.h>
 #include <XmlRpcException.h>
+#include <moveit/occupancy_map_monitor/esdf_map.h>
 
 
 namespace occupancy_map_monitor
 {
   template class OccupancyMapMonitor<OccMapTree>;
+  template class OccupancyMapMonitor<EsdfMap>;
 
   template <typename  MapType>
 OccupancyMapMonitor<MapType>::OccupancyMapMonitor(double map_resolution)

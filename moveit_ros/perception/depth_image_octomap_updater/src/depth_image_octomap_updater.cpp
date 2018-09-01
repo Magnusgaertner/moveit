@@ -368,14 +368,6 @@ void DepthImageOctomapUpdater::depthImageCallback(const sensor_msgs::ImageConstP
       y_cache_[y] = (y - py) * inv_fy_;
   }
 
-  const octomap::point3d sensor_origin(map_H_sensor.getOrigin().getX(), map_H_sensor.getOrigin().getY(),
-                                       map_H_sensor.getOrigin().getZ());
-
-  octomap::KeySet* occupied_cells_ptr = new octomap::KeySet();
-  octomap::KeySet* model_cells_ptr = new octomap::KeySet();
-  octomap::KeySet& occupied_cells = *occupied_cells_ptr;
-  octomap::KeySet& model_cells = *model_cells_ptr;
-
   // allocate memory if needed
   std::size_t img_size = h * w;
   if (filtered_labels_.size() < img_size)
@@ -446,6 +438,17 @@ void DepthImageOctomapUpdater::depthImageCallback(const sensor_msgs::ImageConstP
     pub_filtered_depth_image_.publish(filtered_msg, *info_msg);
   }
 
+
+  //here is where the mess starts ...
+  const octomap::point3d sensor_origin(map_H_sensor.getOrigin().getX(), map_H_sensor.getOrigin().getY(),
+                                       map_H_sensor.getOrigin().getZ());
+
+  octomap::KeySet* occupied_cells_ptr = new octomap::KeySet();
+  octomap::KeySet* model_cells_ptr = new octomap::KeySet();
+  octomap::KeySet& occupied_cells = *occupied_cells_ptr;
+  octomap::KeySet& model_cells = *model_cells_ptr;
+
+
   // figure out occupied cells and model cells
   tree_->lockRead();
 
@@ -469,6 +472,8 @@ void DepthImageOctomapUpdater::depthImageCallback(const sensor_msgs::ImageConstP
             float xx = x_cache_[x] * zz;
             /* transform to map frame */
             tf::Vector3 point_tf = map_H_sensor * tf::Vector3(xx, yy, zz);
+
+            //todo for general depth image updater which is not dependent on octomap
             occupied_cells.insert(tree_->coordToKey(point_tf.getX(), point_tf.getY(), point_tf.getZ()));
           }
           // on far plane or a model point -> remove

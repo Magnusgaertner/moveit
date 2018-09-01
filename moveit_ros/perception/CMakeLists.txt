@@ -39,6 +39,8 @@ find_package(catkin REQUIRED COMPONENTS
   object_recognition_msgs
   sensor_msgs
   moveit_msgs
+        voxblox
+        voxblox_ros
 )
 
 find_package(Eigen3 REQUIRED)

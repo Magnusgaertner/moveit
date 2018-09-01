@@ -36,10 +36,13 @@
 
 #include <moveit/occupancy_map_monitor/occupancy_map_monitor.h>
 #include <moveit/occupancy_map_monitor/occupancy_map_updater.h>
+#include <moveit/occupancy_map_monitor/esdf_map.h>
 
 namespace occupancy_map_monitor
 {
   template class OccupancyMapUpdater<OccMapTree>;
+  template class OccupancyMapUpdater<EsdfMap>;
+
 
   template<typename MapType>
 OccupancyMapUpdater<MapType>::OccupancyMapUpdater(const std::string& type) : type_(type)

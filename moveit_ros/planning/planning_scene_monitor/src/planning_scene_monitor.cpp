@@ -378,8 +378,8 @@ void planning_scene_monitor::PlanningSceneMonitor::scenePublishingThread()
               boost::bind(&PlanningSceneMonitor::currentWorldObjectUpdateCallback, this, _1, _2));
           if (octomap_monitor_)
           {
-            excludeAttachedBodiesFromOctree();  // in case updates have happened to the attached bodies, put them in
-            excludeWorldObjectsFromOctree();    // in case updates have happened to the attached bodies, put them in
+            excludeAttachedBodiesFromOctree(octomap_monitor_);  // in case updates have happened to the attached bodies, put them in
+            excludeWorldObjectsFromOctree(octomap_monitor_);    // in case updates have happened to the attached bodies, put them in
           }
           if (is_full)
           {
@@ -551,8 +551,8 @@ bool planning_scene_monitor::PlanningSceneMonitor::newPlanningSceneMessage(const
     }
     if (octomap_monitor_)
     {
-      excludeAttachedBodiesFromOctree();  // in case updates have happened to the attached bodies, put them in
-      excludeWorldObjectsFromOctree();    // in case updates have happened to the attached bodies, put them in
+      excludeAttachedBodiesFromOctree(octomap_monitor_);  // in case updates have happened to the attached bodies, put them in
+      excludeWorldObjectsFromOctree(octomap_monitor_);    // in case updates have happened to the attached bodies, put them in
     }
   }
 
@@ -646,14 +646,15 @@ void planning_scene_monitor::PlanningSceneMonitor::attachObjectCallback(
   }
 }
 
-void planning_scene_monitor::PlanningSceneMonitor::excludeRobotLinksFromOctree()
+template<typename T>
+void planning_scene_monitor::PlanningSceneMonitor::excludeRobotLinksFromOctree(T& map_monitor_)
 {
-  if (!octomap_monitor_)
+  if (!map_monitor_)
     return;
 
   boost::recursive_mutex::scoped_lock _(shape_handles_lock_);
 
-  includeRobotLinksInOctree();
+  includeRobotLinksInOctree(map_monitor_);
   const std::vector<const robot_model::LinkModel*>& links = getRobotModel()->getLinkModelsWithCollisionGeometry();
   ros::WallTime start = ros::WallTime::now();
   bool warned = false;
@@ -670,7 +671,7 @@ void planning_scene_monitor::PlanningSceneMonitor::excludeRobotLinksFromOctree()
         shapes[j].reset(m);
       }
 
-      occupancy_map_monitor::ShapeHandle h = octomap_monitor_->excludeShape(shapes[j]);
+      occupancy_map_monitor::ShapeHandle h = map_monitor_->excludeShape(shapes[j]);
       if (h)
         link_shape_handles_[links[i]].push_back(std::make_pair(h, j));
     }
@@ -682,22 +683,24 @@ void planning_scene_monitor::PlanningSceneMonitor::excludeRobotLinksFromOctree()
   }
 }
 
-void planning_scene_monitor::PlanningSceneMonitor::includeRobotLinksInOctree()
+template<typename T>
+void planning_scene_monitor::PlanningSceneMonitor::includeRobotLinksInOctree(T& map_monitor_)
 {
-  if (!octomap_monitor_)
+  if (!map_monitor_)
     return;
 
   boost::recursive_mutex::scoped_lock _(shape_handles_lock_);
 
   for (LinkShapeHandles::iterator it = link_shape_handles_.begin(); it != link_shape_handles_.end(); ++it)
     for (std::size_t i = 0; i < it->second.size(); ++i)
-      octomap_monitor_->forgetShape(it->second[i].first);
+      map_monitor_->forgetShape(it->second[i].first);
   link_shape_handles_.clear();
 }
 
-void planning_scene_monitor::PlanningSceneMonitor::includeAttachedBodiesInOctree()
+template<typename T>
+void planning_scene_monitor::PlanningSceneMonitor::includeAttachedBodiesInOctree(T& map_monitor_)
 {
-  if (!octomap_monitor_)
+  if (!map_monitor_)
     return;
 
   boost::recursive_mutex::scoped_lock _(shape_handles_lock_);
@@ -706,25 +709,27 @@ void planning_scene_monitor::PlanningSceneMonitor::includeAttachedBodiesInOctree
   for (AttachedBodyShapeHandles::iterator it = attached_body_shape_handles_.begin();
        it != attached_body_shape_handles_.end(); ++it)
     for (std::size_t k = 0; k < it->second.size(); ++k)
-      octomap_monitor_->forgetShape(it->second[k].first);
+      map_monitor_->forgetShape(it->second[k].first);
   attached_body_shape_handles_.clear();
 }
 
-void planning_scene_monitor::PlanningSceneMonitor::excludeAttachedBodiesFromOctree()
+template<typename T>
+void planning_scene_monitor::PlanningSceneMonitor::excludeAttachedBodiesFromOctree(T& map_monitor_)
 {
   boost::recursive_mutex::scoped_lock _(shape_handles_lock_);
 
-  includeAttachedBodiesInOctree();
+  includeAttachedBodiesInOctree(map_monitor_);
   // add attached objects again
   std::vector<const robot_state::AttachedBody*> ab;
   scene_->getCurrentState().getAttachedBodies(ab);
   for (std::size_t i = 0; i < ab.size(); ++i)
-    excludeAttachedBodyFromOctree(ab[i]);
+    excludeAttachedBodyFromOctree(ab[i], map_monitor_);
 }
 
-void planning_scene_monitor::PlanningSceneMonitor::includeWorldObjectsInOctree()
+template<typename T>
+void planning_scene_monitor::PlanningSceneMonitor::includeWorldObjectsInOctree(T& map_monitor_)
 {
-  if (!octomap_monitor_)
+  if (!map_monitor_)
     return;
 
   boost::recursive_mutex::scoped_lock _(shape_handles_lock_);
@@ -733,24 +738,26 @@ void planning_scene_monitor::PlanningSceneMonitor::includeWorldObjectsInOctree()
   for (CollisionBodyShapeHandles::iterator it = collision_body_shape_handles_.begin();
        it != collision_body_shape_handles_.end(); ++it)
     for (std::size_t k = 0; k < it->second.size(); ++k)
-      octomap_monitor_->forgetShape(it->second[k].first);
+      map_monitor_->forgetShape(it->second[k].first);
   collision_body_shape_handles_.clear();
 }
 
-void planning_scene_monitor::PlanningSceneMonitor::excludeWorldObjectsFromOctree()
+template<typename T>
+void planning_scene_monitor::PlanningSceneMonitor::excludeWorldObjectsFromOctree(T& map_monitor_)
 {
   boost::recursive_mutex::scoped_lock _(shape_handles_lock_);
 
-  includeWorldObjectsInOctree();
+  includeWorldObjectsInOctree(map_monitor_);
   for (collision_detection::World::const_iterator it = scene_->getWorld()->begin(); it != scene_->getWorld()->end();
        ++it)
-    excludeWorldObjectFromOctree(it->second);
+    excludeWorldObjectFromOctree(it->second, map_monitor_);
 }
 
+template<typename T>
 void planning_scene_monitor::PlanningSceneMonitor::excludeAttachedBodyFromOctree(
-    const robot_state::AttachedBody* attached_body)
+    const robot_state::AttachedBody* attached_body,T& map_monitor_)
 {
-  if (!octomap_monitor_)
+  if (!map_monitor_)
     return;
 
   boost::recursive_mutex::scoped_lock _(shape_handles_lock_);
@@ -759,7 +766,7 @@ void planning_scene_monitor::PlanningSceneMonitor::excludeAttachedBodyFromOctree
   {
     if (attached_body->getShapes()[i]->type == shapes::PLANE || attached_body->getShapes()[i]->type == shapes::OCTREE)
       continue;
-    occupancy_map_monitor::ShapeHandle h = octomap_monitor_->excludeShape(attached_body->getShapes()[i]);
+    occupancy_map_monitor::ShapeHandle h = map_monitor_->excludeShape(attached_body->getShapes()[i]);
     if (h)
     {
       found = true;
@@ -770,10 +777,11 @@ void planning_scene_monitor::PlanningSceneMonitor::excludeAttachedBodyFromOctree
     ROS_DEBUG_NAMED(LOGNAME, "Excluding attached body '%s' from monitored octomap", attached_body->getName().c_str());
 }
 
+template<typename T>
 void planning_scene_monitor::PlanningSceneMonitor::includeAttachedBodyInOctree(
-    const robot_state::AttachedBody* attached_body)
+    const robot_state::AttachedBody* attached_body,T& map_monitor_)
 {
-  if (!octomap_monitor_)
+  if (!map_monitor_)
     return;
 
   boost::recursive_mutex::scoped_lock _(shape_handles_lock_);
@@ -782,16 +790,17 @@ void planning_scene_monitor::PlanningSceneMonitor::includeAttachedBodyInOctree(
   if (it != attached_body_shape_handles_.end())
   {
     for (std::size_t k = 0; k < it->second.size(); ++k)
-      octomap_monitor_->forgetShape(it->second[k].first);
+      map_monitor_->forgetShape(it->second[k].first);
     ROS_DEBUG_NAMED(LOGNAME, "Including attached body '%s' in monitored octomap", attached_body->getName().c_str());
     attached_body_shape_handles_.erase(it);
   }
 }
 
+template<typename T>
 void planning_scene_monitor::PlanningSceneMonitor::excludeWorldObjectFromOctree(
-    const collision_detection::World::ObjectConstPtr& obj)
+    const collision_detection::World::ObjectConstPtr& obj, T& map_monitor_)
 {
-  if (!octomap_monitor_)
+  if (!map_monitor_)
     return;
 
   boost::recursive_mutex::scoped_lock _(shape_handles_lock_);
@@ -801,7 +810,7 @@ void planning_scene_monitor::PlanningSceneMonitor::excludeWorldObjectFromOctree(
   {
     if (obj->shapes_[i]->type == shapes::PLANE || obj->shapes_[i]->type == shapes::OCTREE)
       continue;
-    occupancy_map_monitor::ShapeHandle h = octomap_monitor_->excludeShape(obj->shapes_[i]);
+    occupancy_map_monitor::ShapeHandle h = map_monitor_->excludeShape(obj->shapes_[i]);
     if (h)
     {
       collision_body_shape_handles_[obj->id_].push_back(std::make_pair(h, &obj->shape_poses_[i]));
@@ -812,10 +821,11 @@ void planning_scene_monitor::PlanningSceneMonitor::excludeWorldObjectFromOctree(
     ROS_DEBUG_NAMED(LOGNAME, "Excluding collision object '%s' from monitored octomap", obj->id_.c_str());
 }
 
+template<typename T>
 void planning_scene_monitor::PlanningSceneMonitor::includeWorldObjectInOctree(
-    const collision_detection::World::ObjectConstPtr& obj)
+    const collision_detection::World::ObjectConstPtr& obj, T& map_monitor_)
 {
-  if (!octomap_monitor_)
+  if (!map_monitor_)
     return;
 
   boost::recursive_mutex::scoped_lock _(shape_handles_lock_);
@@ -824,7 +834,7 @@ void planning_scene_monitor::PlanningSceneMonitor::includeWorldObjectInOctree(
   if (it != collision_body_shape_handles_.end())
   {
     for (std::size_t k = 0; k < it->second.size(); ++k)
-      octomap_monitor_->forgetShape(it->second[k].first);
+      map_monitor_->forgetShape(it->second[k].first);
     ROS_DEBUG_NAMED(LOGNAME, "Including collision object '%s' in monitored octomap", obj->id_.c_str());
     collision_body_shape_handles_.erase(it);
   }
@@ -837,9 +847,9 @@ void planning_scene_monitor::PlanningSceneMonitor::currentStateAttachedBodyUpdat
     return;
 
   if (just_attached)
-    excludeAttachedBodyFromOctree(attached_body);
+    excludeAttachedBodyFromOctree(attached_body, octomap_monitor_);
   else
-    includeAttachedBodyInOctree(attached_body);
+    includeAttachedBodyInOctree(attached_body, octomap_monitor_);
 }
 
 void planning_scene_monitor::PlanningSceneMonitor::currentWorldObjectUpdateCallback(
@@ -851,13 +861,13 @@ void planning_scene_monitor::PlanningSceneMonitor::currentWorldObjectUpdateCallb
     return;
 
   if (action & collision_detection::World::CREATE)
-    excludeWorldObjectFromOctree(obj);
+    excludeWorldObjectFromOctree(obj, octomap_monitor_);
   else if (action & collision_detection::World::DESTROY)
-    includeWorldObjectInOctree(obj);
+    includeWorldObjectInOctree(obj,octomap_monitor_);
   else
   {
-    excludeWorldObjectFromOctree(obj);
-    includeWorldObjectInOctree(obj);
+    excludeWorldObjectFromOctree(obj, octomap_monitor_);
+    includeWorldObjectInOctree(obj, octomap_monitor_);
   }
 }
 
@@ -1024,7 +1034,7 @@ bool planning_scene_monitor::PlanningSceneMonitor::getShapeTransformCache(
 
 void planning_scene_monitor::PlanningSceneMonitor::startWorldGeometryMonitor(
     const std::string& collision_objects_topic, const std::string& planning_scene_world_topic,
-    const bool load_octomap_monitor)
+    const bool load_octomap_monitor, const bool load_esdf_monitor)
 {
   stopWorldGeometryMonitor();
   ROS_INFO_NAMED(LOGNAME, "Starting world geometry monitor");
@@ -1067,15 +1077,32 @@ void planning_scene_monitor::PlanningSceneMonitor::startWorldGeometryMonitor(
     if (!octomap_monitor_)
     {
       octomap_monitor_.reset(new occupancy_map_monitor::OccupancyMapMonitor<occupancy_map_monitor::OccMapTree>(tf_, scene_->getPlanningFrame()));
-      excludeRobotLinksFromOctree();
-      excludeAttachedBodiesFromOctree();
-      excludeWorldObjectsFromOctree();
+      excludeRobotLinksFromOctree(octomap_monitor_);
+      excludeAttachedBodiesFromOctree(octomap_monitor_);
+      excludeWorldObjectsFromOctree(octomap_monitor_);
 
       octomap_monitor_->setTransformCacheCallback(
           boost::bind(&PlanningSceneMonitor::getShapeTransformCache, this, _1, _2, _3));
       octomap_monitor_->setUpdateCallback(boost::bind(&PlanningSceneMonitor::octomapUpdateCallback, this));
     }
     octomap_monitor_->startMonitor();
+  }
+  //TODO not jet implemented just template
+
+  if (load_esdf_monitor)
+  {
+    if (!esdf_monitor_)
+    {
+      esdf_monitor_.reset(new occupancy_map_monitor::OccupancyMapMonitor<occupancy_map_monitor::EsdfMap>(tf_, scene_->getPlanningFrame()));
+      excludeRobotLinksFromOctree(esdf_monitor_);
+      excludeAttachedBodiesFromOctree(esdf_monitor_);
+      excludeWorldObjectsFromOctree(esdf_monitor_);
+
+      esdf_monitor_->setTransformCacheCallback(
+          boost::bind(&PlanningSceneMonitor::getShapeTransformCache, this, _1, _2, _3));
+      esdf_monitor_->setUpdateCallback(boost::bind(&PlanningSceneMonitor::octomapUpdateCallback, this));
+    }
+    esdf_monitor_->startMonitor();
   }
 }
 
@@ -1095,6 +1122,9 @@ void planning_scene_monitor::PlanningSceneMonitor::stopWorldGeometryMonitor()
   }
   if (octomap_monitor_)
     octomap_monitor_->stopMonitor();
+
+  if (esdf_monitor_)
+    esdf_monitor_->stopMonitor();
 }
 
 void planning_scene_monitor::PlanningSceneMonitor::startStateMonitor(const std::string& joint_states_topic,

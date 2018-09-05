@@ -86,7 +86,7 @@ namespace occupancy_map_monitor {
 
   template <typename MapType>
   bool PointCloudMapUpdater<MapType>::initialize() {
-    tf_ = OccupancyMapMonitor<MapType>::monitor_->getTFClient();
+    tf_ = OccupancyMapUpdater<MapType>::monitor_->getTFClient();
     shape_mask_.reset(new point_containment_filter::ShapeMask());
     shape_mask_->setTransformCallback(boost::bind(&PointCloudMapUpdater<MapType>::getShapeTransform, this, _1, _2));
     if (!filtered_cloud_topic_.empty())
@@ -101,9 +101,9 @@ namespace occupancy_map_monitor {
     /* subscribe to point cloud topic using tf filter*/
     point_cloud_subscriber_ = new message_filters::Subscriber<sensor_msgs::PointCloud2>(root_nh_, point_cloud_topic_,
                                                                                         5);
-    if (tf_ && !OccupancyMapMonitor<MapType>::monitor_->getMapFrame().empty()) {
+    if (tf_ && !OccupancyMapUpdater<MapType>::monitor_->getMapFrame().empty()) {
       point_cloud_filter_ =
-          new tf::MessageFilter<sensor_msgs::PointCloud2>(*point_cloud_subscriber_, *tf_, OccupancyMapMonitor<MapType>::monitor_->getMapFrame(), 5);
+          new tf::MessageFilter<sensor_msgs::PointCloud2>(*point_cloud_subscriber_, *tf_, OccupancyMapUpdater<MapType>::monitor_->getMapFrame(), 5);
       point_cloud_filter_->registerCallback(boost::bind(&PointCloudMapUpdater<MapType>::cloudMsgCallback, this, _1));
       ROS_INFO("Listening to '%s' using message filter with target frame '%s'", point_cloud_topic_.c_str(),
                point_cloud_filter_->getTargetFramesString().c_str());
@@ -144,8 +144,8 @@ namespace occupancy_map_monitor {
 
   template <typename MapType>
   bool PointCloudMapUpdater<MapType>::getShapeTransform(ShapeHandle h, Eigen::Affine3d &transform) const {
-    ShapeTransformCache::const_iterator it = OccupancyMapMonitor<MapType>::transform_cache_.find(h);
-    if (it == OccupancyMapMonitor<MapType>::transform_cache_.end()) {
+    ShapeTransformCache::const_iterator it = OccupancyMapUpdater<MapType>::transform_cache_.find(h);
+    if (it == OccupancyMapUpdater<MapType>::transform_cache_.end()) {
       ROS_ERROR("Internal error. Shape filter handle %u not found", h);
       return false;
     }

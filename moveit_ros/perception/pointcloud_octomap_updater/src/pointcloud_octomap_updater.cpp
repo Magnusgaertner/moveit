@@ -86,7 +86,6 @@ void PointCloudOctomapUpdater::cloudMsgCallback(const sensor_msgs::PointCloud2::
 
   /* compute sensor origin in map frame */
   const tf::Vector3& sensor_origin_tf = map_H_sensor.getOrigin();
-  octomap::point3d sensor_origin(sensor_origin_tf.getX(), sensor_origin_tf.getY(), sensor_origin_tf.getZ());
   Eigen::Vector3d sensor_origin_eigen(sensor_origin_tf.getX(), sensor_origin_tf.getY(), sensor_origin_tf.getZ());
 
   if (!updateTransformCache(cloud_msg->header.frame_id, cloud_msg->header.stamp))
@@ -99,7 +98,7 @@ void PointCloudOctomapUpdater::cloudMsgCallback(const sensor_msgs::PointCloud2::
   shape_mask_->maskContainment(*cloud_msg, sensor_origin_eigen, 0.0, max_range_, mask_);
   updateMask(*cloud_msg, sensor_origin_eigen, mask_);
 
-  octomap::KeySet free_cells, occupied_cells, model_cells, clip_cells;
+
   std::unique_ptr<sensor_msgs::PointCloud2> filtered_cloud;
 
   // We only use these iterators if we are creating a filtered_cloud for
@@ -124,6 +123,8 @@ void PointCloudOctomapUpdater::cloudMsgCallback(const sensor_msgs::PointCloud2::
   }
   size_t filtered_cloud_size = 0;
 
+  octomap::KeySet free_cells, occupied_cells, model_cells, clip_cells;
+  octomap::point3d sensor_origin(sensor_origin_tf.getX(), sensor_origin_tf.getY(), sensor_origin_tf.getZ());
   tree_->lockRead();
 
   try
@@ -226,7 +227,7 @@ void PointCloudOctomapUpdater::cloudMsgCallback(const sensor_msgs::PointCloud2::
     ROS_ERROR("Internal error while updating octree");
   }
   tree_->unlockWrite();
-  ROS_DEBUG("Processed point cloud in %lf ms", (ros::WallTime::now() - start).toSec() * 1000.0);
+  //ROS_DEBUG("Processed point cloud in %lf ms", (ros::WallTime::now() - start).toSec() * 1000.0);
   tree_->triggerUpdateCallback();
 
   if (filtered_cloud)

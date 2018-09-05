@@ -73,7 +73,7 @@ namespace occupancy_map_monitor {
     virtual void updateMask(const sensor_msgs::PointCloud2 &cloud, const Eigen::Vector3d &sensor_origin,
                             std::vector<int> &mask);
 
-    virtual void cloudMsgCallback(const sensor_msgs::PointCloud2::ConstPtr &cloud_msg);
+    virtual void cloudMsgCallback(const sensor_msgs::PointCloud2::ConstPtr &cloud_msg) = 0;
 
     bool getShapeTransform(ShapeHandle h, Eigen::Affine3d &transform) const;
 

@@ -42,6 +42,7 @@
 #include <moveit/occupancy_map_monitor/occupancy_map_monitor.h>
 #include <XmlRpcException.h>
 #include <moveit/occupancy_map_monitor/esdf_map.h>
+#include <typeinfo>
 
 
 namespace occupancy_map_monitor
@@ -97,6 +98,8 @@ void OccupancyMapMonitor<MapType>::initialize()
 
 
   map_const_ = map_;
+  base_map_ = std::static_pointer_cast<MoveitMap, MapType>(map_);
+  base_map_const_ = base_map_;
 
   XmlRpc::XmlRpcValue sensor_list;
   if (nh_.getParam("sensors", sensor_list))
@@ -129,8 +132,10 @@ void OccupancyMapMonitor<MapType>::initialize()
           {
             try
             {
-              updater_plugin_loader_.reset(new pluginlib::ClassLoader<OccupancyMapUpdater<MapType> >(
-                  "moveit_ros_perception", "occupancy_map_monitor::OccupancyMapUpdater"));
+              std::string base_type = std::string("occupancy_map_monitor::OccupancyMapUpdater<") + typeid(MapType).name() + std::string(">");
+              ROS_ERROR("plugin loader base type is: %s", base_type);
+              updater_plugin_loader_.reset(new pluginlib::ClassLoader<occupancy_map_monitor::OccupancyMapUpdater<MapType> >(
+                  "moveit_ros_perception", base_type));
             }
             catch (pluginlib::PluginlibException& ex)
             {
@@ -183,11 +188,12 @@ void OccupancyMapMonitor<MapType>::initialize()
 }
 
 template<typename MapType>
-void OccupancyMapMonitor<MapType>::addUpdater(const OccupancyMapUpdaterPtr& updater)
+void OccupancyMapMonitor<MapType>::addUpdater(const MapUpdaterPtr& updater)
 {
   if (updater)
   {
-    map_updaters_.push_back(updater);
+    //static cast?
+    map_updaters_.push_back(std::dynamic_pointer_cast<OccupancyMapUpdater<MapType>, MapUpdater>(updater));
     updater->publishDebugInformation(debug_info_);
     if (map_updaters_.size() > 1)
     {

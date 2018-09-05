@@ -38,7 +38,8 @@
 #define MOVEIT_OCCUPANCY_MAP_MONITOR_ESDF_MAP_
 
 //#include <octomap/octomap.h>
-//#include <voxblox_ros/esdf_server.h>
+#include <voxblox_ros/esdf_server.h>
+
 namespace occupancy_map_monitor {
 
   MOVEIT_CLASS_FORWARD(EsdfMap);
@@ -53,21 +54,24 @@ namespace occupancy_map_monitor {
     void init() {
       ros::NodeHandle nh;
       ros::NodeHandle nh_private("~");
-      // vxblx.reset(new voxblox::EsdfServer(nh, nh_private));
+      vxblx.reset(new voxblox::EsdfServer(nh, nh_private));
     }
 
     inline virtual bool writeBinary(const std::string &filename) override {
-      //saveMap(filename);
+      vxblx->saveMap(filename);
       return true;
     }
 
     inline virtual bool readBinary(const std::string &filename) override {
-      //loadMap(filename);
+      vxblx->loadMap(filename);
       return true;
+    }
+    inline virtual void clear() override {
+      vxblx->clear();
     }
 
   private:
-    //std::unique_ptr<voxblox::EsdfServer> vxblx;
+    std::unique_ptr<voxblox::EsdfServer> vxblx;
   };
 }
 

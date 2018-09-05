@@ -422,20 +422,19 @@ protected:
   /** @brief Callback for a change in the world maintained by the planning scene */
   void currentWorldObjectUpdateCallback(const collision_detection::World::ObjectConstPtr& object,
                                         collision_detection::World::Action action);
-  typedef  std::unique_ptr<occupancy_map_monitor::OccupancyMapMonitor<occupancy_map_monitor::OccMapTree> > OctomapMonitorPtr;
-  typedef std::unique_ptr<occupancy_map_monitor::OccupancyMapMonitor<occupancy_map_monitor::EsdfMap> > EsdfMonitorPtr;
-  template<typename T> void includeRobotLinksInOctree(T& map_monitor_);
-  template<typename T> void excludeRobotLinksFromOctree(T& map_monitor_);
 
-  template<typename T> void excludeWorldObjectsFromOctree(T& map_monitor_);
-  template<typename T> void includeWorldObjectsInOctree(T& map_monitor_);
-  template<typename T> void excludeWorldObjectFromOctree(const collision_detection::World::ObjectConstPtr& obj, T& map_monitor_);
-  template<typename T> void includeWorldObjectInOctree(const collision_detection::World::ObjectConstPtr& obj, T& map_monitor_);
+  void includeRobotLinksInOctree();
+  void excludeRobotLinksFromOctree();
 
-  template<typename T> void excludeAttachedBodiesFromOctree(T& map_monitor_);
-  template<typename T> void includeAttachedBodiesInOctree(T& map_monitor_);
-  template<typename T> void excludeAttachedBodyFromOctree(const robot_state::AttachedBody* attached_body,T& map_monitor_);
-  template<typename T> void includeAttachedBodyInOctree(const robot_state::AttachedBody* attached_body, T& map_monitor_);
+  void excludeWorldObjectsFromOctree();
+  void includeWorldObjectsInOctree();
+  void excludeWorldObjectFromOctree(const collision_detection::World::ObjectConstPtr& obj);
+  void includeWorldObjectInOctree(const collision_detection::World::ObjectConstPtr& obj);
+
+  void excludeAttachedBodiesFromOctree();
+  void includeAttachedBodiesInOctree();
+  void excludeAttachedBodyFromOctree(const robot_state::AttachedBody* attached_body);
+  void includeAttachedBodyInOctree(const robot_state::AttachedBody* attached_body);
 
   bool getShapeTransformCache(const std::string& target_frame, const ros::Time& target_time,
                               occupancy_map_monitor::ShapeTransformCache& cache) const;
@@ -486,8 +485,8 @@ protected:
   std::unique_ptr<tf::MessageFilter<moveit_msgs::CollisionObject> > collision_object_filter_;
 
   // include a octomap monitor
-  OctomapMonitorPtr octomap_monitor_;
-  EsdfMonitorPtr esdf_monitor_;
+  std::unique_ptr<occupancy_map_monitor::MapMonitor> octomap_monitor_;
+
   // include a current state monitor
   CurrentStateMonitorPtr current_state_monitor_;
 

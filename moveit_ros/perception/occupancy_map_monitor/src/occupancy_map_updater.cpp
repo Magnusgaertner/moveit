@@ -55,30 +55,10 @@ OccupancyMapUpdater<MapType>::OccupancyMapUpdater(const std::string& type) : typ
 }
 
 template<typename MapType>
-void OccupancyMapUpdater<MapType>::setMonitor(OccupancyMapMonitor<MapType>* monitor)
+void OccupancyMapUpdater<MapType>::setMonitor(MapMonitor* monitor)
 {
-  monitor_ = monitor;
-  tree_ = monitor->getOcTreePtr();
-}
-
-template<typename MapType>
-void OccupancyMapUpdater<MapType>::readXmlParam(XmlRpc::XmlRpcValue& params, const std::string& param_name, double* value)
-{
-  if (params.hasMember(param_name))
-  {
-    if (params[param_name].getType() == XmlRpc::XmlRpcValue::TypeInt)
-      *value = (int)params[param_name];
-    else
-      *value = (double)params[param_name];
-  }
-}
-
-
-template<typename MapType>
-void OccupancyMapUpdater<MapType>::readXmlParam(XmlRpc::XmlRpcValue& params, const std::string& param_name, unsigned int* value)
-{
-  if (params.hasMember(param_name))
-    *value = (int)params[param_name];
+  monitor_ = static_cast<OccupancyMapMonitor<MapType>*> (monitor);
+  tree_ = std::dynamic_pointer_cast<MapType, MoveitMap> (monitor_->getOcTreePtr());
 }
 
 template<typename MapType>

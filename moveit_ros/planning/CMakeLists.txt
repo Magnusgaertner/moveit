@@ -22,6 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   tf_conversions
   eigen_conversions
+  voxblox_ros
 )
 
 find_package(Eigen3 REQUIRED)

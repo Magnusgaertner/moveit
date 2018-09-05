@@ -16,6 +16,8 @@ namespace occupancy_map_monitor {
 
     virtual bool readBinary(const std::string& filename) = 0;
 
+    virtual void clear() = 0;
+
     /** @brief lock the underlying map. it will not be read or written by the
      *  monitor until unlockTree() is called */
     void lockRead() { map_mutex_.lock_shared(); }

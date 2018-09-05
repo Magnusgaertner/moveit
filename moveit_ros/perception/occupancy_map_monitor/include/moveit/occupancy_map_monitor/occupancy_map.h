@@ -60,6 +60,10 @@ public:
   inline virtual bool readBinary(const std::string& filename) override{
     octomap::OcTree::readBinary(filename);
   }
+
+  inline virtual void clear() override {
+    octomap::OcTree::clear();
+  }
 private:
 };
 

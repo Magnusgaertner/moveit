@@ -73,6 +73,7 @@ catkin_package(
     moveit_core
     image_transport
     moveit_msgs
+        voxblox_ros
   DEPENDS
     EIGEN3
 )

@@ -64,6 +64,9 @@ public:
   inline virtual void clear() override {
     octomap::OcTree::clear();
   }
+  inline static std::string name(){
+    return "occupancy_map_monitor::OccMapTree";
+  }
 private:
 };
 

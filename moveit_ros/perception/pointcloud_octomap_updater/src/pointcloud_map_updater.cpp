@@ -42,30 +42,37 @@
 #include <XmlRpcException.h>
 
 #include <memory>
+#include <moveit/occupancy_map_monitor/esdf_map.h>
 
 namespace occupancy_map_monitor {
-  PointCloudMapUpdater::PointCloudMapUpdater()
-      : OccupancyMapUpdater("PointCloudUpdater"), private_nh_("~"), scale_(1.0), padding_(0.0),
+  template class PointCloudMapUpdater<OccMapTree>;
+  template class PointCloudMapUpdater<EsdfMap>;
+
+  template <typename MapType>
+  PointCloudMapUpdater<MapType>::PointCloudMapUpdater()
+      : OccupancyMapUpdater<MapType>("PointCloudUpdater"), private_nh_("~"), scale_(1.0), padding_(0.0),
         max_range_(std::numeric_limits<double>::infinity()), point_subsample_(1), max_update_rate_(0),
         point_cloud_subscriber_(NULL), point_cloud_filter_(NULL) {
   }
 
-  PointCloudMapUpdater::~PointCloudMapUpdater() {
+  template <typename MapType>
+  PointCloudMapUpdater<MapType>::~PointCloudMapUpdater() {
     stopHelper();
   }
 
-  bool PointCloudMapUpdater::setParams(XmlRpc::XmlRpcValue &params) {
+  template <typename MapType>
+  bool PointCloudMapUpdater<MapType>::setParams(XmlRpc::XmlRpcValue &params) {
     try {
       if (!params.hasMember("point_cloud_topic"))
         return false;
       point_cloud_topic_ = static_cast<const std::string &>(params["point_cloud_topic"]);
 
-      readXmlParam(params, "max_range", &max_range_);
-      readXmlParam(params, "padding_offset", &padding_);
-      readXmlParam(params, "padding_scale", &scale_);
-      readXmlParam(params, "point_subsample", &point_subsample_);
+      MapUpdater::readXmlParam(params, "max_range", &max_range_);
+      MapUpdater::readXmlParam(params, "padding_offset", &padding_);
+      MapUpdater::readXmlParam(params, "padding_scale", &scale_);
+      MapUpdater::readXmlParam(params, "point_subsample", &point_subsample_);
       if (params.hasMember("max_update_rate"))
-        readXmlParam(params, "max_update_rate", &max_update_rate_);
+        MapUpdater::readXmlParam(params, "max_update_rate", &max_update_rate_);
       if (params.hasMember("filtered_cloud_topic"))
         filtered_cloud_topic_ = static_cast<const std::string &>(params["filtered_cloud_topic"]);
     }
@@ -77,45 +84,50 @@ namespace occupancy_map_monitor {
     return true;
   }
 
-  bool PointCloudMapUpdater::initialize() {
-    tf_ = monitor_->getTFClient();
+  template <typename MapType>
+  bool PointCloudMapUpdater<MapType>::initialize() {
+    tf_ = OccupancyMapMonitor<MapType>::monitor_->getTFClient();
     shape_mask_.reset(new point_containment_filter::ShapeMask());
-    shape_mask_->setTransformCallback(boost::bind(&PointCloudMapUpdater::getShapeTransform, this, _1, _2));
+    shape_mask_->setTransformCallback(boost::bind(&PointCloudMapUpdater<MapType>::getShapeTransform, this, _1, _2));
     if (!filtered_cloud_topic_.empty())
       filtered_cloud_publisher_ = private_nh_.advertise<sensor_msgs::PointCloud2>(filtered_cloud_topic_, 10, false);
     return true;
   }
 
-  void PointCloudMapUpdater::start() {
+  template <typename MapType>
+  void PointCloudMapUpdater<MapType>::start() {
     if (point_cloud_subscriber_)
       return;
     /* subscribe to point cloud topic using tf filter*/
     point_cloud_subscriber_ = new message_filters::Subscriber<sensor_msgs::PointCloud2>(root_nh_, point_cloud_topic_,
                                                                                         5);
-    if (tf_ && !monitor_->getMapFrame().empty()) {
+    if (tf_ && !OccupancyMapMonitor<MapType>::monitor_->getMapFrame().empty()) {
       point_cloud_filter_ =
-          new tf::MessageFilter<sensor_msgs::PointCloud2>(*point_cloud_subscriber_, *tf_, monitor_->getMapFrame(), 5);
-      point_cloud_filter_->registerCallback(boost::bind(&PointCloudMapUpdater::cloudMsgCallback, this, _1));
+          new tf::MessageFilter<sensor_msgs::PointCloud2>(*point_cloud_subscriber_, *tf_, OccupancyMapMonitor<MapType>::monitor_->getMapFrame(), 5);
+      point_cloud_filter_->registerCallback(boost::bind(&PointCloudMapUpdater<MapType>::cloudMsgCallback, this, _1));
       ROS_INFO("Listening to '%s' using message filter with target frame '%s'", point_cloud_topic_.c_str(),
                point_cloud_filter_->getTargetFramesString().c_str());
     } else {
-      point_cloud_subscriber_->registerCallback(boost::bind(&PointCloudMapUpdater::cloudMsgCallback, this, _1));
+      point_cloud_subscriber_->registerCallback(boost::bind(&PointCloudMapUpdater<MapType>::cloudMsgCallback, this, _1));
       ROS_INFO("Listening to '%s'", point_cloud_topic_.c_str());
     }
   }
 
-  void PointCloudMapUpdater::stopHelper() {
+  template <typename MapType>
+  void PointCloudMapUpdater<MapType>::stopHelper() {
     delete point_cloud_filter_;
     delete point_cloud_subscriber_;
   }
 
-  void PointCloudMapUpdater::stop() {
+  template <typename MapType>
+  void PointCloudMapUpdater<MapType>::stop() {
     stopHelper();
     point_cloud_filter_ = NULL;
     point_cloud_subscriber_ = NULL;
   }
 
-  ShapeHandle PointCloudMapUpdater::excludeShape(const shapes::ShapeConstPtr &shape) {
+  template <typename MapType>
+  ShapeHandle PointCloudMapUpdater<MapType>::excludeShape(const shapes::ShapeConstPtr &shape) {
     ShapeHandle h = 0;
     if (shape_mask_)
       h = shape_mask_->addShape(shape, scale_, padding_);
@@ -124,14 +136,16 @@ namespace occupancy_map_monitor {
     return h;
   }
 
-  void PointCloudMapUpdater::forgetShape(ShapeHandle handle) {
+  template <typename MapType>
+  void PointCloudMapUpdater<MapType>::forgetShape(ShapeHandle handle) {
     if (shape_mask_)
       shape_mask_->removeShape(handle);
   }
 
-  bool PointCloudMapUpdater::getShapeTransform(ShapeHandle h, Eigen::Affine3d &transform) const {
-    ShapeTransformCache::const_iterator it = transform_cache_.find(h);
-    if (it == transform_cache_.end()) {
+  template <typename MapType>
+  bool PointCloudMapUpdater<MapType>::getShapeTransform(ShapeHandle h, Eigen::Affine3d &transform) const {
+    ShapeTransformCache::const_iterator it = OccupancyMapMonitor<MapType>::transform_cache_.find(h);
+    if (it == OccupancyMapMonitor<MapType>::transform_cache_.end()) {
       ROS_ERROR("Internal error. Shape filter handle %u not found", h);
       return false;
     }
@@ -139,7 +153,8 @@ namespace occupancy_map_monitor {
     return true;
   }
 
-  void PointCloudMapUpdater::updateMask(const sensor_msgs::PointCloud2 &cloud, const Eigen::Vector3d &sensor_origin,
+  template <typename MapType>
+  void PointCloudMapUpdater<MapType>::updateMask(const sensor_msgs::PointCloud2 &cloud, const Eigen::Vector3d &sensor_origin,
                                         std::vector<int> &mask) {
   }
 

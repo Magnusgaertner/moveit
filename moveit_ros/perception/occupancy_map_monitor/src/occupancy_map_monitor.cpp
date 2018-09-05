@@ -132,8 +132,8 @@ void OccupancyMapMonitor<MapType>::initialize()
           {
             try
             {
-              std::string base_type = std::string("occupancy_map_monitor::OccupancyMapUpdater<") + typeid(MapType).name() + std::string(">");
-              ROS_ERROR("plugin loader base type is: %s", base_type);
+              std::string base_type = std::string("occupancy_map_monitor::OccupancyMapUpdater<") + MapType::name() + std::string(">");
+              ROS_ERROR_STREAM(base_type);
               updater_plugin_loader_.reset(new pluginlib::ClassLoader<occupancy_map_monitor::OccupancyMapUpdater<MapType> >(
                   "moveit_ros_perception", base_type));
             }

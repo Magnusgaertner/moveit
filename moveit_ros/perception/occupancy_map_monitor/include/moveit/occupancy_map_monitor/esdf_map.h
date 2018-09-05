@@ -70,6 +70,9 @@ namespace occupancy_map_monitor {
       vxblx->clear();
     }
 
+    inline static std::string name(){
+      return "occupancy_map_monitor::EsdfMap";
+    }
   private:
     std::unique_ptr<voxblox::EsdfServer> vxblx;
   };

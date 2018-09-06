@@ -1,7 +1,7 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2012, Willow Garage, Inc.
+ *  Copyright (c) 2008, Willow Garage, Inc.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -32,53 +32,9 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/* Author: Magnus Gärtner */
+/* Author: Ioan Sucan */
 
-#ifndef MOVEIT_OCCUPANCY_MAP_MONITOR_ESDF_MAP_
-#define MOVEIT_OCCUPANCY_MAP_MONITOR_ESDF_MAP_
+#include <class_loader/class_loader.hpp>
+#include <moveit/pointcloud_octomap_updater/pointcloud_esdf_updater.h>
 
-//#include <octomap/octomap.h>
-#include <ros/ros.h>
-#include <voxblox_ros/esdf_server.h>
-#include "moveit_map.h"
-
-namespace occupancy_map_monitor {
-
-  class EsdfMap : public MoveitMap {
-  public:
-
-    EsdfMap(double resolution) { init(); }
-
-    EsdfMap(const std::string &filename) { init(); }
-
-    void init() {
-      ros::NodeHandle nh;
-      ros::NodeHandle nh_private("~");
-      vxblx.reset(new voxblox::EsdfServer(nh, nh_private));
-    }
-
-    inline virtual bool writeBinary(const std::string &filename) override {
-      vxblx->saveMap(filename);
-      return true;
-    }
-
-    inline virtual bool readBinary(const std::string &filename) override {
-      vxblx->loadMap(filename);
-      return true;
-    }
-    inline virtual void clear() override {
-      vxblx->clear();
-    }
-
-    inline static std::string name(){
-      return "occupancy_map_monitor::EsdfMap";
-    }
-  private:
-    std::unique_ptr<voxblox::EsdfServer> vxblx;
-  };
-
-  typedef std::shared_ptr<EsdfMap> EsdfMapPtr;
-  typedef std::shared_ptr<const EsdfMap> EsdfMapConstPtr;
-}
-
-#endif
+CLASS_LOADER_REGISTER_CLASS(occupancy_map_monitor::PointCloudEsdfUpdater, occupancy_map_monitor::OccupancyMapUpdater<occupancy_map_monitor::EsdfMap>)

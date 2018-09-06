@@ -9,6 +9,7 @@ if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
+
 find_package(Boost REQUIRED thread signals)
 
 if(WITH_OPENGL)
@@ -26,21 +27,26 @@ if(APPLE)
   find_package(X11 REQUIRED)
 endif(APPLE)
 
+
+
+
 find_package(catkin REQUIRED COMPONENTS
-  moveit_core
-  roscpp
-  rosconsole
-  urdf
-  message_filters
-  tf
-  tf_conversions
-  pluginlib
-  image_transport
-  object_recognition_msgs
-  sensor_msgs
-  moveit_msgs
-  voxblox_ros
-)
+        moveit_core
+        roscpp
+        rosconsole
+        urdf
+        message_filters
+        tf
+        tf_conversions
+        pluginlib
+        image_transport
+        object_recognition_msgs
+        sensor_msgs
+        moveit_msgs
+        voxblox_ros
+        gflags_catkin
+        glog_catkin
+        )
 
 find_package(Eigen3 REQUIRED)
 
@@ -67,13 +73,14 @@ catkin_package(
     moveit_point_containment_filter
     moveit_occupancy_map_monitor
     moveit_pointcloud_octomap_updater_core
+        moveit_pointcloud_esdf_updater_core
     moveit_semantic_world
     ${OCTOMAP_LIBRARIES}
   CATKIN_DEPENDS
     moveit_core
     image_transport
     moveit_msgs
-        voxblox_ros
+    voxblox_ros
   DEPENDS
     EIGEN3
 )

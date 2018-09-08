@@ -47,6 +47,7 @@
 #include <eigen_conversions/eigen_msg.h>
 #include <memory>
 #include <set>
+#include <moveit/collision_detection/moveit_map.h>
 
 namespace planning_scene
 {
@@ -1399,6 +1400,14 @@ void PlanningScene::processOctomapPtr(const std::shared_ptr<const octomap::OcTre
   world_->removeObject(OCTOMAP_NS);
   world_->addToObject(OCTOMAP_NS, shapes::ShapeConstPtr(new shapes::OcTree(octree)), t);
 }
+
+  void PlanningScene::processMapPtr(const std::shared_ptr<collision_detection::MoveitMap>& octree, const Eigen::Affine3d& t)
+  {
+    collision_detection::MoveitMapPtr map = world_->getMapPtr();
+    // if the octree pointer changed, update the structure
+    if(map!= octree)world_->setMapPtr(octree);
+    world_->setMapPose(t);
+  }
 
 bool PlanningScene::processAttachedCollisionObjectMsg(const moveit_msgs::AttachedCollisionObject& object)
 {

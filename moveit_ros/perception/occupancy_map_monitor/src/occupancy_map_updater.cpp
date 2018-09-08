@@ -58,7 +58,7 @@ template<typename MapType>
 void OccupancyMapUpdater<MapType>::setMonitor(MapMonitor* monitor)
 {
   monitor_ = static_cast<OccupancyMapMonitor<MapType>*> (monitor);
-  tree_ = std::dynamic_pointer_cast<MapType, MoveitMap> (monitor_->getOcTreePtr());
+  tree_ = std::dynamic_pointer_cast<MapType, collision_detection::MoveitMap> (monitor_->getOcTreePtr());
 }
 
 template<typename MapType>

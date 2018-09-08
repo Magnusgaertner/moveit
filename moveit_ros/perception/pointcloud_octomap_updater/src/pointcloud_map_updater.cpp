@@ -75,6 +75,8 @@ namespace occupancy_map_monitor {
         MapUpdater::readXmlParam(params, "max_update_rate", &max_update_rate_);
       if (params.hasMember("filtered_cloud_topic"))
         filtered_cloud_topic_ = static_cast<const std::string &>(params["filtered_cloud_topic"]);
+      if (params.hasMember("freespace_cloud_topic_"))
+        freespace_cloud_topic_ = static_cast<const std::string &>(params["freespace_cloud_topic"]);
     }
     catch (XmlRpc::XmlRpcException &ex) {
       ROS_ERROR("XmlRpc Exception: %s", ex.getMessage().c_str());
@@ -91,6 +93,9 @@ namespace occupancy_map_monitor {
     shape_mask_->setTransformCallback(boost::bind(&PointCloudMapUpdater<MapType>::getShapeTransform, this, _1, _2));
     if (!filtered_cloud_topic_.empty())
       filtered_cloud_publisher_ = private_nh_.advertise<sensor_msgs::PointCloud2>(filtered_cloud_topic_, 10, false);
+    if (!freespace_cloud_topic_.empty())
+      freespace_cloud_publisher_ = private_nh_.advertise<sensor_msgs::PointCloud2>(freespace_cloud_topic_, 10, false);
+
     return true;
   }
 

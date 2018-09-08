@@ -41,13 +41,13 @@
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/function.hpp>
 #include <memory>
-#include "moveit_map.h"
+#include <moveit/collision_detection/moveit_map.h>
 
 namespace occupancy_map_monitor
 {
 typedef octomap::OcTreeNode OccMapNode;
 
-class OccMapTree : public octomap::OcTree, public MoveitMap {
+class OccMapTree : public octomap::OcTree, public collision_detection::MoveitMap {
 public:
 
   OccMapTree(double resolution) : octomap::OcTree(resolution) {}
@@ -67,6 +67,10 @@ public:
   inline static std::string name(){
     return "occupancy_map_monitor::OccMapTree";
   }
+
+ /* inline virtual void updateScene(const std::shared_ptr<const collision_detection::MoveitMap>& me, planning_scene::PlanningScenePtr& scene, const Eigen::Affine3d& t) override{
+    scene->processOctomapPtr(std::dynamic_pointer_cast(me), t);
+  }*/
 private:
 };
 

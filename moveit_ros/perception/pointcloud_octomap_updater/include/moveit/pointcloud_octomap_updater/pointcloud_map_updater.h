@@ -92,8 +92,8 @@ namespace occupancy_map_monitor {
     double max_range_;
     unsigned int point_subsample_;
     double max_update_rate_;
-    std::string filtered_cloud_topic_;
-    ros::Publisher filtered_cloud_publisher_;
+    std::string filtered_cloud_topic_, freespace_cloud_topic_;
+    ros::Publisher filtered_cloud_publisher_, freespace_cloud_publisher_;
 
     message_filters::Subscriber<sensor_msgs::PointCloud2> *point_cloud_subscriber_;
     tf::MessageFilter<sensor_msgs::PointCloud2> *point_cloud_filter_;

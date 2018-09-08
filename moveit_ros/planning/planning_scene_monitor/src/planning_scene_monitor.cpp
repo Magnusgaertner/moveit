@@ -1226,17 +1226,19 @@ void planning_scene_monitor::PlanningSceneMonitor::octomapUpdateCallback()
     octomap_monitor_->getOcTreePtr()->lockRead();
     try
     {
-      scene_->processOctomapPtr(std::dynamic_pointer_cast<occupancy_map_monitor::OccMapTree, occupancy_map_monitor::MoveitMap>(octomap_monitor_->getOcTreePtr()), Eigen::Affine3d::Identity());
+      scene_->processOctomapPtr(std::dynamic_pointer_cast<occupancy_map_monitor::OccMapTree, collision_detection::MoveitMap>(octomap_monitor_->getOcTreePtr()), Eigen::Affine3d::Identity());
       octomap_monitor_->getOcTreePtr()->unlockRead();
     }
     catch (...)
     {
       octomap_monitor_->getOcTreePtr()->unlockRead();  // unlock and rethrow
-      throw;
+      ROS_ERROR("scene could not process octomap, probably because octomap_monitor_ is now esdf :)");
+      //throw;
     }
   }
   triggerSceneUpdateEvent(UPDATE_GEOMETRY);
 }
+
 
 void planning_scene_monitor::PlanningSceneMonitor::setStateUpdateFrequency(double hz)
 {

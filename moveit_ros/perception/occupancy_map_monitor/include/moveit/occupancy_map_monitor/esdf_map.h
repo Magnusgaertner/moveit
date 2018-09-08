@@ -40,41 +40,47 @@
 //#include <octomap/octomap.h>
 #include <ros/ros.h>
 #include <voxblox_ros/esdf_server.h>
-#include "moveit_map.h"
+#include <moveit/collision_detection/moveit_map.h>
 
 namespace occupancy_map_monitor {
 
-  class EsdfMap : public MoveitMap {
+  class EsdfMap : public collision_detection::MoveitMap, public voxblox::EsdfServer {
   public:
+    EsdfMap(double resolution):voxblox::EsdfServer(ros::NodeHandle(), ros::NodeHandle("~")) { init(); }
 
-    EsdfMap(double resolution) { init(); }
-
-    EsdfMap(const std::string &filename) { init(); }
+    EsdfMap(const std::string &filename):voxblox::EsdfServer(ros::NodeHandle(), ros::NodeHandle("~")) { init(); }
 
     void init() {
-      ros::NodeHandle nh;
-      ros::NodeHandle nh_private("~");
-      vxblx.reset(new voxblox::EsdfServer(nh, nh_private));
+     // ros::NodeHandle nh;
+     // ros::NodeHandle nh_private("~");
+     // vxblx.reset(new voxblox::EsdfServer(nh, nh_private));
     }
 
     inline virtual bool writeBinary(const std::string &filename) override {
-      vxblx->saveMap(filename);
+      saveMap(filename);
       return true;
     }
 
     inline virtual bool readBinary(const std::string &filename) override {
-      vxblx->loadMap(filename);
+      loadMap(filename);
       return true;
     }
     inline virtual void clear() override {
-      vxblx->clear();
+      voxblox::EsdfServer::clear();
     }
 
     inline static std::string name(){
       return "occupancy_map_monitor::EsdfMap";
     }
-  private:
-    std::unique_ptr<voxblox::EsdfServer> vxblx;
+
+   /* inline virtual void updateScene(const std::shared_ptr<const collision_detection::MoveitMap>& me, planning_scene::PlanningScenePtr& scene, const Eigen::Affine3d& t) override{
+      ROS_ERROR("UpdateScene called");
+
+      collision_detection::MoveitMapConstPtr map = scene->getWorld()->getMapPtr();
+      // if the octree pointer changed, update the structure
+      if(map!= me)scene->getWorld()->setMapPtr(me);
+      scene->getWorld()->setMapPose(t);
+    }*/
   };
 
   typedef std::shared_ptr<EsdfMap> EsdfMapPtr;

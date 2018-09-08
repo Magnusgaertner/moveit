@@ -1,15 +1,14 @@
-//
-// Created by magnus on 31.08.18.
-//
-
-#ifndef MOVEIT_INDUSTRIAL_TOPLEVEL_MOVEITMAP_H
-#define MOVEIT_INDUSTRIAL_TOPLEVEL_MOVEITMAP_H
-
-#include <octomap/octomap.h>
-
-namespace occupancy_map_monitor {
+#ifndef MOVEIT_INDUSTRIAL_TOPLEVEL_MOVEIT_MAP_H
+#define MOVEIT_INDUSTRIAL_TOPLEVEL_MOVEIT_MAP_H
 
 
+//dont know how to include boost::function<void()> otherwise
+#include <boost/thread/locks.hpp>
+#include <boost/thread/shared_mutex.hpp>
+#include <boost/function.hpp>
+
+
+namespace collision_detection {
   class MoveitMap {
   public:
     virtual bool writeBinary(const std::string& filename) = 0;
@@ -20,33 +19,31 @@ namespace occupancy_map_monitor {
 
     /** @brief lock the underlying map. it will not be read or written by the
      *  monitor until unlockTree() is called */
-    void lockRead() { map_mutex_.lock_shared(); }
+    void lockRead();
 
     /** @brief unlock the underlying map. */
-    void unlockRead() { map_mutex_.unlock_shared(); }
+    void unlockRead();
 
     /** @brief lock the underlying map. it will not be read or written by the
      *  monitor until unlockTree() is called */
-    void lockWrite() { map_mutex_.lock(); }
+    void lockWrite();
 
     /** @brief unlock the underlying octree. */
-    void unlockWrite() { map_mutex_.unlock(); }
+    void unlockWrite();
 
     typedef boost::shared_lock<boost::shared_mutex> ReadLock;
     typedef boost::unique_lock<boost::shared_mutex> WriteLock;
 
-    ReadLock reading() { return ReadLock(map_mutex_); }
+    ReadLock reading();
 
-    WriteLock writing() { return WriteLock(map_mutex_); }
+    WriteLock writing();
 
-    void triggerUpdateCallback(void)
-    {
-      if (update_callback_)
-        update_callback_();
-    }
+    void triggerUpdateCallback(void);
 
     /** @brief Set the callback to trigger when updates are received */
-    void setUpdateCallback(const boost::function<void()>& update_callback) { update_callback_ = update_callback; }
+    void setUpdateCallback(const boost::function<void()>& update_callback);
+
+    //virtual void updateScene(const std::shared_ptr<const MoveitMap>& me, planning_scene::PlanningScenePtr &scene, const Eigen::Affine3d& t) = 0;
 
   private:
     boost::shared_mutex map_mutex_;

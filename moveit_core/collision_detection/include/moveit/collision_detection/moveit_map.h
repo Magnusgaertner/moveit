@@ -11,6 +11,7 @@
 namespace collision_detection {
   class MoveitMap {
   public:
+    virtual ~MoveitMap() = default;
     virtual bool writeBinary(const std::string& filename) = 0;
 
     virtual bool readBinary(const std::string& filename) = 0;

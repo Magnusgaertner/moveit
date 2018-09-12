@@ -49,7 +49,7 @@ namespace occupancy_map_monitor {
     EsdfMap(double resolution):voxblox::EsdfServer(ros::NodeHandle(), ros::NodeHandle("~")) { init(); }
 
     EsdfMap(const std::string &filename):voxblox::EsdfServer(ros::NodeHandle(), ros::NodeHandle("~")) { init(); }
-
+    virtual ~EsdfMap() = default;
     void init() {
      // ros::NodeHandle nh;
      // ros::NodeHandle nh_private("~");

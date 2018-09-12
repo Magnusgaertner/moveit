@@ -54,6 +54,8 @@ public:
 
   OccMapTree(const std::string& filename) : octomap::OcTree(filename) {}
 
+  virtual ~OccMapTree() = default;
+
   inline virtual bool writeBinary(const std::string& filename) override{
     octomap::OcTree::writeBinary(filename);
   }

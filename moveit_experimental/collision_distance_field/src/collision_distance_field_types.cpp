@@ -394,7 +394,7 @@ void collision_detection::PosedBodySphereDecomposition::updatePose(const Eigen::
   posed_bounding_sphere_center_ = trans * body_decomposition_->getRelativeBoundingSphere().center;
   for (unsigned int i = 0; i < body_decomposition_->getCollisionSpheres().size(); i++)
   {
-    SWRI_PROFILE("update sphere center");
+   // SWRI_PROFILE("update sphere center");
     sphere_centers_[i] = trans * body_decomposition_->getCollisionSpheres()[i].relative_vec_;
   }
 
@@ -404,7 +404,7 @@ void collision_detection::PosedBodySphereDecomposition::updatePose(const Eigen::
     posed_collision_points_.resize(body_decomposition_->getCollisionPoints().size());
     for (unsigned int i = 0; i < body_decomposition_->getCollisionPoints().size(); i++)
     {
-        SWRI_PROFILE("update collision points");
+        //SWRI_PROFILE("update collision points");
       posed_collision_points_[i] = trans * body_decomposition_->getCollisionPoints()[i];
     }
   }

@@ -1088,7 +1088,7 @@ void planning_scene_monitor::PlanningSceneMonitor::startWorldGeometryMonitor(
 
       octomap_monitor_->setTransformCacheCallback(
           boost::bind(&PlanningSceneMonitor::getShapeTransformCache, this, _1, _2, _3));
-      octomap_monitor_->setUpdateCallback(boost::bind(&PlanningSceneMonitor::octomapUpdateCallback, this));
+      octomap_monitor_->setUpdateCallback(boost::bind(&PlanningSceneMonitor::esdfUpdateCallback, this));
     }
     octomap_monitor_->startMonitor();
   }
@@ -1236,6 +1236,15 @@ void planning_scene_monitor::PlanningSceneMonitor::octomapUpdateCallback()
       //throw;
     }
   }
+  triggerSceneUpdateEvent(UPDATE_GEOMETRY);
+}
+
+void planning_scene_monitor::PlanningSceneMonitor::esdfUpdateCallback()
+{
+  if (!octomap_monitor_)
+    return;
+  updateFrameTransforms();
+  last_update_time_ = ros::Time::now();
   triggerSceneUpdateEvent(UPDATE_GEOMETRY);
 }
 

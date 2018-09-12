@@ -414,6 +414,7 @@ protected:
 
   /** @brief Callback for octomap updates */
   void octomapUpdateCallback();
+  void esdfUpdateCallback();
 
   /** @brief Callback for a new attached object msg*/
   void attachObjectCallback(const moveit_msgs::AttachedCollisionObjectConstPtr& obj);

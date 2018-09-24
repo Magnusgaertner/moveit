@@ -245,6 +245,7 @@ namespace occupancy_map_monitor
     //ROS_DEBUG("Processed point cloud in %lf ms", (ros::WallTime::now() - start).toSec() * 1000.0);
     sensor_msgs::PointCloud2Modifier pcd_modifier_(*filtered_cloud);
     pcd_modifier.resize(filtered_cloud_size);
+    tree_->insertPointcloud(filtered_cloud);
 
     sensor_msgs::PointCloud2Modifier pcd_modifier_freespace_(*freespace_cloud);
     pcd_modifier.resize(freespace_cloud_size);

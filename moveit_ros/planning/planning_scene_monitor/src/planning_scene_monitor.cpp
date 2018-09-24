@@ -1214,6 +1214,9 @@ void planning_scene_monitor::PlanningSceneMonitor::stateUpdateTimerCallback(cons
   }
 }
 
+/**
+ * triggered after processing a pointcloud/ depth image...
+ */
 void planning_scene_monitor::PlanningSceneMonitor::octomapUpdateCallback()
 {
   if (!octomap_monitor_)
@@ -1244,7 +1247,20 @@ void planning_scene_monitor::PlanningSceneMonitor::esdfUpdateCallback()
   if (!octomap_monitor_)
     return;
   updateFrameTransforms();
-  last_update_time_ = ros::Time::now();
+  {
+    boost::unique_lock<boost::shared_mutex> ulock(scene_update_mutex_);
+    last_update_time_ = ros::Time::now();
+    octomap_monitor_->getOcTreePtr()->lockRead();
+    try
+    {
+      scene_->processMapPtr(octomap_monitor_->getOcTreePtr(), Eigen::Affine3d::Identity());
+      octomap_monitor_->getOcTreePtr()->unlockRead();
+    }
+    catch (...)
+    {
+      octomap_monitor_->getOcTreePtr()->unlockRead();  // unlock
+    }
+  }
   triggerSceneUpdateEvent(UPDATE_GEOMETRY);
 }
 

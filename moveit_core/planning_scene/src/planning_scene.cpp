@@ -490,6 +490,10 @@ void PlanningScene::pushDiffs(const PlanningScenePtr& scene)
     scene->propogateRobotPadding();
   }
 
+  //TODO is this really what we want?
+  if(world_->getMapPtr()){
+    scene->world_->setMapPtr(world_->getMapPtr());
+  }
   if (world_diff_)
   {
     for (collision_detection::WorldDiff::const_iterator it = world_diff_->begin(); it != world_diff_->end(); ++it)
@@ -1403,9 +1407,10 @@ void PlanningScene::processOctomapPtr(const std::shared_ptr<const octomap::OcTre
 
   void PlanningScene::processMapPtr(const std::shared_ptr<collision_detection::MoveitMap>& octree, const Eigen::Affine3d& t)
   {
-    collision_detection::MoveitMapPtr map = world_->getMapPtr();
+    //collision_detection::MoveitMapPtr map = world_->getMapPtr();
     // if the octree pointer changed, update the structure
-    if(map!= octree)world_->setMapPtr(octree);
+   // if(map!= octree)
+    world_->setMapPtr(octree);
     world_->setMapPose(t);
   }
 

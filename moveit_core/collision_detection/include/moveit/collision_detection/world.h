@@ -243,7 +243,8 @@ public:
    * Used which switching from one world to another. */
   void notifyObserverAllObjects(const ObserverHandle observer_handle, Action action) const;
 
-  void setMapPtr(MoveitMapPtr map);
+  void setMapPtr(const MoveitMapPtr& map);
+  MoveitMapConstPtr getMapPtr() const;
   MoveitMapPtr getMapPtr();
   void setMapPose(const Eigen::Affine3d& t);
   Eigen::Affine3d getWorldPose();

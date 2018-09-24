@@ -42,6 +42,7 @@
 #include <voxblox_ros/esdf_server.h>
 #include <moveit/collision_detection/moveit_map.h>
 #include <moveit/distance_field/distance_field.h>
+//#include "../../../../../../../voxblox/voxblox_ros/include/voxblox_ros/esdf_server.h"
 
 namespace occupancy_map_monitor {
 
@@ -58,13 +59,11 @@ namespace occupancy_map_monitor {
     }
 
     inline virtual bool writeBinary(const std::string &filename) override {
-      saveMap(filename);
-      return true;
+      return saveMap(filename);
     }
 
     inline virtual bool readBinary(const std::string &filename) override {
-      loadMap(filename);
-      return true;
+      return loadMap(filename);
     }
     inline virtual void clear() override {
       voxblox::EsdfServer::clear();

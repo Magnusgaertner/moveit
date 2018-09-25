@@ -53,8 +53,6 @@ namespace occupancy_map_monitor
 {
   void PointCloudEsdfUpdater::cloudMsgCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg)
   {
-   ROS_ERROR("Not yet implemented");
-
     if (max_update_rate_ > 0)
     {
       // ensure we are not updating the octomap representation too often

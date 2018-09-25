@@ -136,9 +136,11 @@ void CollisionRobotDistanceField::initialize(
   }
 
   ros::NodeHandle n("~");
+  marker_pub = n.advertise<visualization_msgs::MarkerArray>("RobotSphereDecomposition", 1, true);
   service_server.shutdown();
   service_server = n.advertiseService("publish_robot_sphere_decomposition", &CollisionRobotDistanceField::show, this);
-  marker_pub = n.advertise<visualization_msgs::MarkerArray>("RobotSphereDecomposition", 1, true);
+
+
 }
 
   bool CollisionRobotDistanceField::show(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res) {

@@ -48,9 +48,9 @@ namespace occupancy_map_monitor {
 
   class EsdfMap : public voxblox::EsdfServer , public distance_field::DistanceField, public collision_detection::MoveitMap {
   public:
-    EsdfMap(double resolution):voxblox::EsdfServer(ros::NodeHandle(), ros::NodeHandle("~")), DistanceField(0,0,0,0,0,0,0) { init(); }
+    EsdfMap(double resolution):voxblox::EsdfServer(ros::NodeHandle(), ros::NodeHandle("~voxblox")), DistanceField(0,0,0,0,0,0,0) { init(); }
 
-    EsdfMap(const std::string &filename):voxblox::EsdfServer(ros::NodeHandle(), ros::NodeHandle("~")), DistanceField(0,0,0,0,0,0,0) { init(); }
+    EsdfMap(const std::string &filename):voxblox::EsdfServer(ros::NodeHandle(), ros::NodeHandle("~voxblox")), DistanceField(0,0,0,0,0,0,0) { init(); }
     virtual ~EsdfMap() = default;
     void init() {
      // ros::NodeHandle nh;

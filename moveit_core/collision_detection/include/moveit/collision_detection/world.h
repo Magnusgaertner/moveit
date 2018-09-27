@@ -69,6 +69,7 @@ public:
    * \e other should not be changed while the copy constructor is running
    * This does copy on write and should be quick. */
   World(const World& other);
+  World& operator=(const World& other);
 
   ~World();
 

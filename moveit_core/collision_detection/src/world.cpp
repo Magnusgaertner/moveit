@@ -48,6 +48,11 @@ World::World(const World& other)
   objects_ = other.objects_;
   map_ = other.map_;
 }
+World& World::operator=(const World& other){
+  objects_ = other.objects_;
+  map_ = other.map_;
+  return *this;
+}
 
 World::~World()
 {

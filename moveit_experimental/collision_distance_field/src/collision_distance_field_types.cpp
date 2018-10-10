@@ -198,19 +198,19 @@ bool collision_detection::getCollisionSphereCollision(const distance_field::Dist
 {
   for (unsigned int i = 0; i < sphere_list.size(); i++)
   {
-    Eigen::Vector3d p = sphere_centers[i];
-    Eigen::Vector3d grad;
-    bool in_bounds = true;
-    double dist = distance_field->getDistanceGradient(p.x(), p.y(), p.z(), grad.x(), grad.y(), grad.z(), in_bounds);
+    const Eigen::Vector3d& p = sphere_centers[i];
+    //Eigen::Vector3d grad;
+    //bool in_bounds = true;
+    double dist = distance_field->getDistance(p.x(), p.y(), p.z());
 
     //ignore unknown space
     //if(!in_bounds)continue;
 
-    if (!in_bounds && grad.norm() > 0)
-    {
+    //if (!in_bounds && grad.norm() > 0)
+    //{
       //ROS_DEBUG("Collision sphere point is out of bounds");
-      return true;
-    }
+      //return true;
+    //}
 
     if ((maximum_value > dist) && (sphere_list[i].radius_ - dist > tolerance))
     {

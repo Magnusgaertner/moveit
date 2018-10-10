@@ -185,6 +185,8 @@ void OccupancyMapMonitor<MapType>::initialize()
   /* advertise a service for loading octomaps from disk */
   save_map_srv_ = nh_.advertiseService("save_map", &OccupancyMapMonitor<MapType>::saveMapCallback, this);
   load_map_srv_ = nh_.advertiseService("load_map", &OccupancyMapMonitor<MapType>::loadMapCallback, this);
+
+  map_->triggerUpdateCallback();
 }
 
 template<typename MapType>
@@ -344,7 +346,7 @@ bool OccupancyMapMonitor<MapType>::loadMapCallback(moveit_msgs::LoadMap::Request
     response.success = false;
   }
   map_->unlockWrite();
-
+  map_->triggerUpdateCallback();
   return true;
 }
   template<typename MapType>

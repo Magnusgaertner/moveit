@@ -40,13 +40,14 @@
 #include <message_filters/subscriber.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
 #include <XmlRpcException.h>
-
+#include <swri_profiler/profiler.h>
 #include <memory>
 
 namespace occupancy_map_monitor
 {
 void PointCloudOctomapUpdater::cloudMsgCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg)
 {
+  SWRI_PROFILE("cloudMsgCallback");
   ROS_DEBUG("Received a new point cloud message");
   ros::WallTime start = ros::WallTime::now();
 

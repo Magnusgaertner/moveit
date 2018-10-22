@@ -79,6 +79,7 @@ void CollisionWorldHybrid::checkCollisionDistanceField(const CollisionRequest& r
   cworld_distance_->checkCollision(req, res, robot, state, gsr);
 }
 
+
 void CollisionWorldHybrid::checkCollisionDistanceField(const CollisionRequest& req, CollisionResult& res,
                                                        const CollisionRobot& robot,
                                                        const robot_state::RobotState& state,
@@ -112,6 +113,14 @@ void CollisionWorldHybrid::checkRobotCollisionDistanceField(const CollisionReque
 }
 
 void CollisionWorldHybrid::checkRobotCollisionDistanceField(const CollisionRequest& req, CollisionResult& res,
+                                                            const CollisionRobot& robot,
+                                                            const robot_state::RobotState& state,
+                                                            const AllowedCollisionMatrix& acm) const
+{
+  cworld_distance_->checkRobotCollision(req, res, robot, state, acm);
+}
+
+void CollisionWorldHybrid::checkRobotCollision(const CollisionRequest& req, CollisionResult& res,
                                                             const CollisionRobot& robot,
                                                             const robot_state::RobotState& state,
                                                             const AllowedCollisionMatrix& acm) const

@@ -87,6 +87,8 @@ public:
   void checkRobotCollisionDistanceField(const CollisionRequest& req, CollisionResult& res, const CollisionRobot& robot,
                                         const robot_state::RobotState& state, const AllowedCollisionMatrix& acm) const;
 
+  virtual void checkRobotCollision(const CollisionRequest& req, CollisionResult& res, const CollisionRobot& robot,
+                                        const robot_state::RobotState& state, const AllowedCollisionMatrix& acm) const override;
   void checkRobotCollisionDistanceField(const CollisionRequest& req, CollisionResult& res, const CollisionRobot& robot,
                                         const robot_state::RobotState& state, const AllowedCollisionMatrix& acm,
                                         GroupStateRepresentationPtr& gsr) const;

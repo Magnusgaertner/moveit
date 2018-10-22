@@ -46,13 +46,14 @@
 #include <message_filters/subscriber.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
 #include <XmlRpcException.h>
-
+#include <swri_profiler/profiler.h>
 #include <memory>
 
 namespace occupancy_map_monitor
 {
   void PointCloudEsdfUpdater::cloudMsgCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg)
   {
+    SWRI_PROFILE("cloudMsgCallback");
     if (max_update_rate_ > 0)
     {
       // ensure we are not updating the octomap representation too often
@@ -241,13 +242,18 @@ namespace occupancy_map_monitor
     }
     tree_->unlockWrite();*/
     //ROS_DEBUG("Processed point cloud in %lf ms", (ros::WallTime::now() - start).toSec() * 1000.0);
+
     sensor_msgs::PointCloud2Modifier pcd_modifier_(*filtered_cloud);
     pcd_modifier.resize(filtered_cloud_size);
-    tree_->insertPointcloud(filtered_cloud);
 
     sensor_msgs::PointCloud2Modifier pcd_modifier_freespace_(*freespace_cloud);
     pcd_modifier.resize(freespace_cloud_size);
-    tree_->insertFreespacePointcloud(freespace_cloud);
+
+    {
+      SWRI_PROFILE("insertPointcloud_and_FreespacePointcloud");
+      tree_->insertPointcloud(filtered_cloud);
+      tree_->insertFreespacePointcloud(freespace_cloud);
+    }
     tree_->triggerUpdateCallback();
 
     if (filtered_cloud_publisher_.getNumSubscribers() !=0)

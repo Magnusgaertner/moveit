@@ -43,7 +43,7 @@
 #include <moveit/collision_detection/moveit_map.h>
 #include <moveit/distance_field/distance_field.h>
 //#include "../../../../../../../voxblox/voxblox_ros/include/voxblox_ros/esdf_server.h"
-
+#include <voxblox_octomap_conversions/octomap_conversions.h>
 namespace occupancy_map_monitor {
 
   class EsdfMap : public voxblox::EsdfServer , public distance_field::DistanceField, public collision_detection::MoveitMap {
@@ -71,6 +71,11 @@ namespace occupancy_map_monitor {
 
     inline static std::string name(){
       return "occupancy_map_monitor::EsdfMap";
+    }
+
+
+    virtual void getOctreeMessage(octomap_msgs::Octomap* msg)const override{
+      voxblox::serializeLayerAsOctomapMsg(this->getTsdfMapPtr()->getTsdfLayer(),msg, 1);
     }
 
    /* inline virtual void updateScene(const std::shared_ptr<const collision_detection::MoveitMap>& me, planning_scene::PlanningScenePtr& scene, const Eigen::Affine3d& t) override{

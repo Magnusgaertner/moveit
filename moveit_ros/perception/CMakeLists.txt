@@ -46,6 +46,7 @@ find_package(catkin REQUIRED COMPONENTS
         voxblox_ros
         gflags_catkin
         glog_catkin
+        voxblox_octomap_conversions
         )
 
 find_package(Eigen3 REQUIRED)

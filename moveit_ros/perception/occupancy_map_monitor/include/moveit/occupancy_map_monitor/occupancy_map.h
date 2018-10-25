@@ -70,6 +70,11 @@ public:
     return "occupancy_map_monitor::OccMapTree";
   }
 
+  //this is the obvious case
+  virtual void getOctreeMessage(octomap_msgs::Octomap* msg)const override{
+    octomap_msgs::fullMapToMsg(this, msg);
+  }
+
  /* inline virtual void updateScene(const std::shared_ptr<const collision_detection::MoveitMap>& me, planning_scene::PlanningScenePtr& scene, const Eigen::Affine3d& t) override{
     scene->processOctomapPtr(std::dynamic_pointer_cast(me), t);
   }*/

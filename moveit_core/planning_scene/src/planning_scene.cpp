@@ -490,7 +490,7 @@ void PlanningScene::pushDiffs(const PlanningScenePtr& scene)
     scene->propogateRobotPadding();
   }
 
-  //TODO is this really what we want?
+  //TODO is this really what we want? nope
   if(world_->getMapPtr()){
     scene->world_->setMapPtr(world_->getMapPtr());
   }
@@ -885,7 +885,10 @@ bool PlanningScene::getOctomapMsg(octomap_msgs::OctomapWithPose& octomap) const
 {
   octomap.header.frame_id = getPlanningFrame();
   octomap.octomap = octomap_msgs::Octomap();
-
+  if(world_->getMapPtr()){
+      world_->getMapPtr()->getOctreeMessage(&octomap.octomap);
+      return true;
+  }
   collision_detection::CollisionWorld::ObjectConstPtr map = world_->getObject(OCTOMAP_NS);
   if (map)
   {

@@ -6,7 +6,7 @@
 #include <boost/thread/locks.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/function.hpp>
-
+#include <octomap/OcTree.h>
 
 namespace collision_detection {
   class MoveitMap {
@@ -46,6 +46,7 @@ namespace collision_detection {
 
     //virtual void updateScene(const std::shared_ptr<const MoveitMap>& me, planning_scene::PlanningScenePtr &scene, const Eigen::Affine3d& t) = 0;
 
+    virtual void getOctreeMessage(octomap_msgs::Octomap* msg) const = 0;
   private:
     boost::shared_mutex map_mutex_;
     boost::function<void()> update_callback_;

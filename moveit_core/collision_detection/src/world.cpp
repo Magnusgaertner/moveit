@@ -269,7 +269,9 @@ void World::notifyObserverAllObjects(const ObserverHandle observer_handle, Actio
   }
 }
 
-void World::setMapPtr(collision_detection::MoveitMapPtr map){map_ = map;}
+void World::setMapPtr(const collision_detection::MoveitMapPtr& map){map_ = map;}
+
+collision_detection::MoveitMapConstPtr World::getMapPtr() const{return map_;}
 
 collision_detection::MoveitMapPtr World::getMapPtr(){return map_;}
 

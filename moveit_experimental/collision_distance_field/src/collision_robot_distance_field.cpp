@@ -134,7 +134,6 @@ void CollisionRobotDistanceField::initialize(
         generateDistanceFieldCacheEntry(jm->getName(), state, &planning_scene_->getAllowedCollisionMatrix(), false);
     getGroupStateRepresentation(dfce, state, pregenerated_group_state_representation_map_[jm->getName()]);
   }
-
   ros::NodeHandle n("~");
   service_server = n.advertiseService("publish_robot_sphere_decomposition", &CollisionRobotDistanceField::show, this);
   marker_pub = n.advertise<visualization_msgs::MarkerArray>("RobotSphereDecomposition", 1, true);
@@ -165,7 +164,7 @@ void CollisionRobotDistanceField::generateCollisionCheckingStructures(
     const collision_detection::AllowedCollisionMatrix* acm, GroupStateRepresentationPtr& gsr,
     bool generate_distance_field) const
 {
-    SWRI_PROFILE("collisionrobotdistancefield::generatecollisioncheckingstructures");
+  SWRI_PROFILE("collisionrobotdistancefield::generatecollisioncheckingstructures");
   DistanceFieldCacheEntryConstPtr dfce = getDistanceFieldCacheEntry(group_name, state, acm);
   if (!dfce || (generate_distance_field && !dfce->distance_field_))
   {

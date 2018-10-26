@@ -6,8 +6,7 @@
 #include <boost/thread/locks.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/function.hpp>
-#include <octomap/OcTree.h>
-
+#include <octomap_msgs/Octomap.h>
 namespace collision_detection {
   class MoveitMap {
   public:
@@ -39,6 +38,9 @@ namespace collision_detection {
 
     WriteLock writing();
 
+    /**
+     * @details default callbacks are planning_scene_monitor::esdf/octomapUpdateCallback
+     */
     void triggerUpdateCallback(void);
 
     /** @brief Set the callback to trigger when updates are received */

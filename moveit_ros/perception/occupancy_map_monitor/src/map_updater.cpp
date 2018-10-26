@@ -36,7 +36,7 @@
 
 #include <moveit/occupancy_map_monitor/occupancy_map_monitor.h>
 #include <moveit/occupancy_map_monitor/occupancy_map_updater.h>
-#include <moveit/occupancy_map_monitor/esdf_map.h>
+
 
 namespace occupancy_map_monitor
 {
@@ -49,6 +49,13 @@ namespace occupancy_map_monitor
         *value = (int)params[param_name];
       else
         *value = (double)params[param_name];
+    }
+  }
+  void MapUpdater::readXmlParam(XmlRpc::XmlRpcValue &params, const std::string &param_name, bool *value) {
+    if (params.hasMember(param_name))
+    {
+      if (params[param_name].getType() == XmlRpc::XmlRpcValue::TypeBoolean)
+        *value = (bool)params[param_name];
     }
   }
 

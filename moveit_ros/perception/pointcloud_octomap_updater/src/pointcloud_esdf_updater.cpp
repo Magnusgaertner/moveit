@@ -51,6 +51,20 @@
 
 namespace occupancy_map_monitor
 {
+    bool PointCloudEsdfUpdater::setParams(XmlRpc::XmlRpcValue &params) {
+      bool res = PointCloudMapUpdater::setParams(params);
+      try {
+        if (params.hasMember("filter_pointcloud"))
+          MapUpdater::readXmlParam(params, "filter_pointcloud", &filter_pointcloud);
+      }
+      catch (XmlRpc::XmlRpcException &ex) {
+        ROS_ERROR("XmlRpc Exception: %s", ex.getMessage().c_str());
+        return false;
+      }
+
+      return res;
+    }
+
   void PointCloudEsdfUpdater::cloudMsgCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg)
   {
     SWRI_PROFILE("cloudMsgCallback");
@@ -97,20 +111,20 @@ namespace occupancy_map_monitor
       ROS_ERROR_THROTTLE(1, "Transform cache was not updated. Self-filtering may fail.");
       return;
     }
+    if(filter_pointcloud){
+      /* mask out points on the robot */
+      shape_mask_->maskContainment(*cloud_msg, sensor_origin_eigen, 0.0, max_range_, mask_);
+      updateMask(*cloud_msg, sensor_origin_eigen, mask_);
 
-    /* mask out points on the robot */
-    shape_mask_->maskContainment(*cloud_msg, sensor_origin_eigen, 0.0, max_range_, mask_);
-    updateMask(*cloud_msg, sensor_origin_eigen, mask_);
 
+      sensor_msgs::PointCloud2::Ptr filtered_cloud, freespace_cloud;
 
-    sensor_msgs::PointCloud2::Ptr filtered_cloud, freespace_cloud;
-
-    // We only use these iterators if we are creating a filtered_cloud for
-    // publishing. We cannot default construct these, so we use unique_ptr's
-    // to defer construction
-    std::unique_ptr<sensor_msgs::PointCloud2Iterator<float> > iter_filtered_x, iter_freespace_x;
-    std::unique_ptr<sensor_msgs::PointCloud2Iterator<float> > iter_filtered_y, iter_freespace_y;
-    std::unique_ptr<sensor_msgs::PointCloud2Iterator<float> > iter_filtered_z, iter_freespace_z;
+      // We only use these iterators if we are creating a filtered_cloud for
+      // publishing. We cannot default construct these, so we use unique_ptr's
+      // to defer construction
+      std::unique_ptr<sensor_msgs::PointCloud2Iterator<float> > iter_filtered_x, iter_freespace_x;
+      std::unique_ptr<sensor_msgs::PointCloud2Iterator<float> > iter_filtered_y, iter_freespace_y;
+      std::unique_ptr<sensor_msgs::PointCloud2Iterator<float> > iter_filtered_z, iter_freespace_z;
 
 
       filtered_cloud.reset(new sensor_msgs::PointCloud2());
@@ -135,47 +149,47 @@ namespace occupancy_map_monitor
       iter_freespace_x.reset(new sensor_msgs::PointCloud2Iterator<float>(*freespace_cloud, "x"));
       iter_freespace_y.reset(new sensor_msgs::PointCloud2Iterator<float>(*freespace_cloud, "y"));
       iter_freespace_z.reset(new sensor_msgs::PointCloud2Iterator<float>(*freespace_cloud, "z"));
-    size_t filtered_cloud_size = 0, freespace_cloud_size = 0;
+      size_t filtered_cloud_size = 0, freespace_cloud_size = 0;
 
-    //octomap::KeySet free_cells, occupied_cells, model_cells, clip_cells;
-    //octomap::point3d sensor_origin(sensor_origin_tf.getX(), sensor_origin_tf.getY(), sensor_origin_tf.getZ());
-    tree_->lockRead();
+      //octomap::KeySet free_cells, occupied_cells, model_cells, clip_cells;
+      //octomap::point3d sensor_origin(sensor_origin_tf.getX(), sensor_origin_tf.getY(), sensor_origin_tf.getZ());
+      tree_->lockRead();
 
-    try
-    {
-      /* do ray tracing to find which cells this point cloud indicates should be free, and which it indicates
-       * should be occupied */
-      for (unsigned int row = 0; row < cloud_msg->height; row += point_subsample_)
+      try
       {
-        unsigned int row_c = row * cloud_msg->width;
-        sensor_msgs::PointCloud2ConstIterator<float> pt_iter(*cloud_msg, "x");
-        // set iterator to point at start of the current row
-        pt_iter += row_c;
-
-        for (unsigned int col = 0; col < cloud_msg->width; col += point_subsample_, pt_iter += point_subsample_)
+        /* do ray tracing to find which cells this point cloud indicates should be free, and which it indicates
+         * should be occupied */
+        for (unsigned int row = 0; row < cloud_msg->height; row += point_subsample_)
         {
-          // if (mask_[row_c + col] == point_containment_filter::ShapeMask::CLIP)
-          //  continue;
+          unsigned int row_c = row * cloud_msg->width;
+          sensor_msgs::PointCloud2ConstIterator<float> pt_iter(*cloud_msg, "x");
+          // set iterator to point at start of the current row
+          pt_iter += row_c;
 
-          /* check for NaN */
-          if (!std::isnan(pt_iter[0]) && !std::isnan(pt_iter[1]) && !std::isnan(pt_iter[2]))
+          for (unsigned int col = 0; col < cloud_msg->width; col += point_subsample_, pt_iter += point_subsample_)
           {
-            /* transform to map frame */
-            tf::Vector3 point_tf = map_H_sensor * tf::Vector3(pt_iter[0], pt_iter[1], pt_iter[2]);
+            // if (mask_[row_c + col] == point_containment_filter::ShapeMask::CLIP)
+            //  continue;
 
-            /* occupied cell at ray endpoint if ray is shorter than max range and this point
-               isn't on a part of the robot*/
-            if (mask_[row_c + col] == point_containment_filter::ShapeMask::INSIDE || mask_[row_c + col] == point_containment_filter::ShapeMask::CLIP){
-              **iter_freespace_x = pt_iter[0];
-              **iter_freespace_y = pt_iter[1];
-              **iter_freespace_z = pt_iter[2];
-              ++freespace_cloud_size;
-              ++*iter_freespace_x;
-              ++*iter_freespace_y;
-              ++*iter_freespace_z; 
-            } //else if (mask_[row_c + col] == point_containment_filter::ShapeMask::CLIP){}//clip_cells.insert(tree_->coordToKey(point_tf.getX(), point_tf.getY(), point_tf.getZ()));
-            else
+            /* check for NaN */
+            if (!std::isnan(pt_iter[0]) && !std::isnan(pt_iter[1]) && !std::isnan(pt_iter[2]))
             {
+              /* transform to map frame */
+              tf::Vector3 point_tf = map_H_sensor * tf::Vector3(pt_iter[0], pt_iter[1], pt_iter[2]);
+
+              /* occupied cell at ray endpoint if ray is shorter than max range and this point
+                 isn't on a part of the robot*/
+              if (mask_[row_c + col] == point_containment_filter::ShapeMask::INSIDE || mask_[row_c + col] == point_containment_filter::ShapeMask::CLIP){
+                **iter_freespace_x = pt_iter[0];
+                **iter_freespace_y = pt_iter[1];
+                **iter_freespace_z = pt_iter[2];
+                ++freespace_cloud_size;
+                ++*iter_freespace_x;
+                ++*iter_freespace_y;
+                ++*iter_freespace_z;
+              } //else if (mask_[row_c + col] == point_containment_filter::ShapeMask::CLIP){}//clip_cells.insert(tree_->coordToKey(point_tf.getX(), point_tf.getY(), point_tf.getZ()));
+              else
+              {
                 **iter_filtered_x = pt_iter[0];
                 **iter_filtered_y = pt_iter[1];
                 **iter_filtered_z = pt_iter[2];
@@ -183,10 +197,10 @@ namespace occupancy_map_monitor
                 ++*iter_filtered_x;
                 ++*iter_filtered_y;
                 ++*iter_filtered_z;
+              }
             }
           }
         }
-      }
 /*
       // compute the free cells along each ray that ends at an occupied cell
       for (octomap::KeySet::iterator it = occupied_cells.begin(), end = occupied_cells.end(); it != end; ++it)
@@ -202,22 +216,22 @@ namespace occupancy_map_monitor
       for (octomap::KeySet::iterator it = clip_cells.begin(), end = clip_cells.end(); it != end; ++it)
         if (tree_->computeRayKeys(sensor_origin, tree_->keyToCoord(*it), key_ray_))
           free_cells.insert(key_ray_.begin(), key_ray_.end());*/
-    }
-    catch (...)
-    {
+      }
+      catch (...)
+      {
+        tree_->unlockRead();
+        return;
+      }
+
       tree_->unlockRead();
-      return;
-    }
 
-    tree_->unlockRead();
+      /* cells that overlap with the model are not occupied */
+      /*for (octomap::KeySet::iterator it = model_cells.begin(), end = model_cells.end(); it != end; ++it)
+        occupied_cells.erase(*it);
 
-    /* cells that overlap with the model are not occupied */
-    /*for (octomap::KeySet::iterator it = model_cells.begin(), end = model_cells.end(); it != end; ++it)
-      occupied_cells.erase(*it);
-
-    // occupied cells are not free
-    for (octomap::KeySet::iterator it = occupied_cells.begin(), end = occupied_cells.end(); it != end; ++it)
-      free_cells.erase(*it);*/
+      // occupied cells are not free
+      for (octomap::KeySet::iterator it = occupied_cells.begin(), end = occupied_cells.end(); it != end; ++it)
+        free_cells.erase(*it);*/
 /*
     tree_->lockWrite();
 
@@ -241,25 +255,31 @@ namespace occupancy_map_monitor
       ROS_ERROR("Internal error while updating octree");
     }
     tree_->unlockWrite();*/
-    //ROS_DEBUG("Processed point cloud in %lf ms", (ros::WallTime::now() - start).toSec() * 1000.0);
+      //ROS_DEBUG("Processed point cloud in %lf ms", (ros::WallTime::now() - start).toSec() * 1000.0);
 
-    sensor_msgs::PointCloud2Modifier pcd_modifier_(*filtered_cloud);
-    pcd_modifier.resize(filtered_cloud_size);
+      sensor_msgs::PointCloud2Modifier pcd_modifier_(*filtered_cloud);
+      pcd_modifier.resize(filtered_cloud_size);
 
-    sensor_msgs::PointCloud2Modifier pcd_modifier_freespace_(*freespace_cloud);
-    pcd_modifier.resize(freespace_cloud_size);
+      sensor_msgs::PointCloud2Modifier pcd_modifier_freespace_(*freespace_cloud);
+      pcd_modifier.resize(freespace_cloud_size);
 
-    {
-      SWRI_PROFILE("insertPointcloud_and_FreespacePointcloud");
-      tree_->insertPointcloud(filtered_cloud);
-      tree_->insertFreespacePointcloud(freespace_cloud);
+      {
+        SWRI_PROFILE("insertPointcloud_and_FreespacePointcloud");
+        tree_->insertPointcloud(filtered_cloud);
+        tree_->insertFreespacePointcloud(freespace_cloud);
+      }
+
+      if (filtered_cloud_publisher_.getNumSubscribers() !=0)
+        filtered_cloud_publisher_.publish(filtered_cloud);
+      if (freespace_cloud_publisher_.getNumSubscribers() != 0)
+        freespace_cloud_publisher_.publish(freespace_cloud);
+    }else{//no filtering
+      tree_->insertPointcloud(cloud_msg);
     }
+
     tree_->triggerUpdateCallback();
 
-    if (filtered_cloud_publisher_.getNumSubscribers() !=0)
-      filtered_cloud_publisher_.publish(filtered_cloud);
-    if (freespace_cloud_publisher_.getNumSubscribers() != 0)
-      freespace_cloud_publisher_.publish(freespace_cloud);
+
 
   }
 }

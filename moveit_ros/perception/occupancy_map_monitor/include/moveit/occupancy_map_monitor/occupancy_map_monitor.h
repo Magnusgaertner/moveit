@@ -46,7 +46,7 @@
 #include <moveit_msgs/SaveMap.h>
 #include <moveit_msgs/LoadMap.h>
 #include <moveit/occupancy_map_monitor/map_monitor.h>
-#include <moveit/occupancy_map_monitor/occupancy_map.h>
+
 #include <moveit/occupancy_map_monitor/occupancy_map_updater.h>
 
 #include <boost/thread/mutex.hpp>
@@ -58,8 +58,11 @@ namespace occupancy_map_monitor
   template <typename MapType>
 class OccupancyMapMonitor:public MapMonitor
 {
-  MOVEIT_DECLARE_PTR(MapType, MapType);
-  MOVEIT_DECLARE_PTR(OccupancyMapUpdater, OccupancyMapUpdater<MapType>);
+  using MapTypeConstPtr = std::shared_ptr<const MapType>;
+  using MapTypePtr = std::shared_ptr<MapType>;
+  using OccupancyMapUpdaterPtr = std::shared_ptr<OccupancyMapUpdater<MapType> >;
+  using OccupancyMapUpdaterConstPtr = std::shared_ptr<const OccupancyMapUpdater<MapType> >;
+
 public:
   OccupancyMapMonitor(const boost::shared_ptr<tf::Transformer>& tf, const std::string& map_frame = "",
                       double map_resolution = 0.0);
@@ -178,5 +181,7 @@ private:
   bool active_;
 };
 }
+
+#include <moveit/occupancy_map_monitor/occupancy_map_monitor.tpp>
 
 #endif

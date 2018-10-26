@@ -45,7 +45,6 @@
 
 #include <moveit_msgs/SaveMap.h>
 #include <moveit_msgs/LoadMap.h>
-#include <moveit/occupancy_map_monitor/occupancy_map.h>
 #include <moveit/occupancy_map_monitor/map_updater.h>
 #include <moveit/collision_detection/moveit_map.h>
 

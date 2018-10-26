@@ -1,12 +1,19 @@
 set(MOVEIT_LIB_NAME moveit_occupancy_map_monitor)
 
 add_library(${MOVEIT_LIB_NAME}
-  src/occupancy_map_monitor.cpp
-  src/occupancy_map_updater.cpp
         src/map_updater.cpp
   )
 set_target_properties(${MOVEIT_LIB_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_VERSION})
 target_link_libraries(${MOVEIT_LIB_NAME} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+
+set(MOVEIT_LIB_NAME moveit_occupancy_map_monitor_esdf_map)
+
+add_library(${MOVEIT_LIB_NAME}
+       src/esdf_map.cpp
+        )
+set_target_properties(${MOVEIT_LIB_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_VERSION})
+target_link_libraries(${MOVEIT_LIB_NAME} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+
 
 install(TARGETS ${MOVEIT_LIB_NAME} LIBRARY DESTINATION lib)
 install(DIRECTORY include/ DESTINATION include)

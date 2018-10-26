@@ -36,7 +36,6 @@
 
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 #include <moveit/robot_model_loader/robot_model_loader.h>
-#include <moveit/exceptions/exceptions.h>
 #include <moveit_msgs/GetPlanningScene.h>
 
 #include <dynamic_reconfigure/server.h>

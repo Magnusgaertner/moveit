@@ -107,5 +107,5 @@ protected:
   virtual bool updateTransformCache(const std::string& target_frame, const ros::Time& target_time) override;
 };
 }
-
+#include <moveit/occupancy_map_monitor/occupancy_map_updater.tpp>
 #endif

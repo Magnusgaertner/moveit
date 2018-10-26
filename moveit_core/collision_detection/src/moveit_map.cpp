@@ -22,7 +22,7 @@ namespace collision_detection{
   void MoveitMap::triggerUpdateCallback(void)
   {
     if (update_callback_)
-      update_callback_();
+      update_callback_(); ///default callbacks are planning_scene_monitor::esdf/octomapUpdateCallback
   }
 
   /** @brief Set the callback to trigger when updates are received */

@@ -39,7 +39,6 @@
 
 #include <ros/ros.h>
 #include <moveit/macros/class_forward.h>
-#include <moveit/occupancy_map_monitor/occupancy_map.h>
 #include <geometric_shapes/shapes.h>
 #include <boost/shared_ptr.hpp>
 #include <Eigen/Core>
@@ -93,6 +92,7 @@ namespace occupancy_map_monitor
     virtual bool updateTransformCache(const std::string& target_frame, const ros::Time& target_time) = 0;
     static void readXmlParam(XmlRpc::XmlRpcValue& params, const std::string& param_name, double* value);
     static void readXmlParam(XmlRpc::XmlRpcValue& params, const std::string& param_name, unsigned int* value);
+    static void readXmlParam(XmlRpc::XmlRpcValue &params, const std::string &param_name, bool *value);
   };
 }
 

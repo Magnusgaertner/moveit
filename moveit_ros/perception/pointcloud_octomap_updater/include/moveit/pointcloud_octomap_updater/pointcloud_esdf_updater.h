@@ -55,7 +55,9 @@ namespace occupancy_map_monitor
   class PointCloudEsdfUpdater : public PointCloudMapUpdater<EsdfMap> {
   public:
     PointCloudEsdfUpdater():PointCloudMapUpdater(){}
+    virtual bool setParams(XmlRpc::XmlRpcValue &params);
   protected:
+      bool filter_pointcloud = true;
     virtual void cloudMsgCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg) override;
   };
 }

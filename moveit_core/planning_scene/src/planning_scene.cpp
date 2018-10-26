@@ -39,15 +39,9 @@
 #include <moveit/collision_detection_fcl/collision_detector_allocator_fcl.h>
 #include <geometric_shapes/shape_operations.h>
 #include <moveit/collision_detection/collision_tools.h>
-#include <moveit/trajectory_processing/trajectory_tools.h>
 #include <moveit/robot_state/conversions.h>
-#include <moveit/exceptions/exceptions.h>
-#include <moveit/robot_state/attached_body.h>
 #include <octomap_msgs/conversions.h>
 #include <eigen_conversions/eigen_msg.h>
-#include <memory>
-#include <set>
-#include <moveit/collision_detection/moveit_map.h>
 
 namespace planning_scene
 {
@@ -1410,11 +1404,31 @@ void PlanningScene::processOctomapPtr(const std::shared_ptr<const octomap::OcTre
 
   void PlanningScene::processMapPtr(const std::shared_ptr<collision_detection::MoveitMap>& octree, const Eigen::Affine3d& t)
   {
-    //collision_detection::MoveitMapPtr map = world_->getMapPtr();
-    // if the octree pointer changed, update the structure
-   // if(map!= octree)
+    const collision_detection::MoveitMap* map = world_->getMapPtr().get();
+    if (map)
+    {
+
+        // check to see if we have the same octree pointer. pose check is not done as we do not have a pose here
+
+        if (map == octree.get())
+        {
+          //if the pointer did not change, the tree did not change aswell as we do not update the tree
+          // TODO check if we have the same octreeRepresentation of our esdf map
+          if (world_diff_)
+            world_diff_->set(OCTOMAP_NS, collision_detection::World::DESTROY | collision_detection::World::CREATE |
+                                         collision_detection::World::ADD_SHAPE);
+
+          return;
+        }
+
+    }
+    //set theMapPtr
     world_->setMapPtr(octree);
-    world_->setMapPose(t);
+    //world_->setMapPose(t);
+    // if the octree pointer changed, update the structure
+    world_->removeObject(OCTOMAP_NS);
+    //this "octree" has no collision objects
+    world_->addToObject(OCTOMAP_NS,shapes::ShapeConstPtr(new shapes::OcTree()),t);
   }
 
 bool PlanningScene::processAttachedCollisionObjectMsg(const moveit_msgs::AttachedCollisionObject& object)

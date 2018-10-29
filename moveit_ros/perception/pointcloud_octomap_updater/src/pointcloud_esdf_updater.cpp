@@ -82,7 +82,7 @@ namespace occupancy_map_monitor
       monitor_->setMapFrame(cloud_msg->header.frame_id);
 
     /* get transform for cloud into map frame */
-    tf::StampedTransform map_H_sensor;
+    /*tf::StampedTransform map_H_sensor;
     if (monitor_->getMapFrame() == cloud_msg->header.frame_id)
       map_H_sensor.setIdentity();
     else
@@ -102,12 +102,13 @@ namespace occupancy_map_monitor
       }
       else
         return;
-    }
+    }*/
 
     /* compute sensor origin in map frame */
-    const tf::Vector3& sensor_origin_tf = map_H_sensor.getOrigin();
-    Eigen::Vector3d sensor_origin_eigen(sensor_origin_tf.getX(), sensor_origin_tf.getY(), sensor_origin_tf.getZ());
+    /*const tf::Vector3& sensor_origin_tf = map_H_sensor.getOrigin();
+    Eigen::Vector3d sensor_origin_eigen(sensor_origin_tf.getX(), sensor_origin_tf.getY(), sensor_origin_tf.getZ());*/
 
+    Eigen::Vector3d sensor_origin_eigen(0,0,0);
     if (!updateTransformCache(cloud_msg->header.frame_id, cloud_msg->header.stamp))
     {
       ROS_ERROR_THROTTLE(1, "Transform cache was not updated. Self-filtering may fail.");
@@ -216,7 +217,7 @@ namespace occupancy_map_monitor
       pcd_modifier.resize(filtered_cloud_size);
 
       sensor_msgs::PointCloud2Modifier pcd_modifier_freespace_(*freespace_cloud);
-      pcd_modifier.resize(freespace_cloud_size);
+      pcd_modifier_freespace_.resize(freespace_cloud_size);
 
       {
         SWRI_PROFILE("insertPointcloud_and_FreespacePointcloud");

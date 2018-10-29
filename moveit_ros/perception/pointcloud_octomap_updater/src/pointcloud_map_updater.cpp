@@ -75,7 +75,7 @@ namespace occupancy_map_monitor {
         MapUpdater::readXmlParam(params, "max_update_rate", &max_update_rate_);
       if (params.hasMember("filtered_cloud_topic"))
         filtered_cloud_topic_ = static_cast<const std::string &>(params["filtered_cloud_topic"]);
-      if (params.hasMember("freespace_cloud_topic_"))
+      if (params.hasMember("freespace_cloud_topic"))
         freespace_cloud_topic_ = static_cast<const std::string &>(params["freespace_cloud_topic"]);
     }
     catch (XmlRpc::XmlRpcException &ex) {

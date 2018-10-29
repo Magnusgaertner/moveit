@@ -58,6 +58,7 @@ namespace occupancy_map_monitor
     virtual bool setParams(XmlRpc::XmlRpcValue &params);
   protected:
       bool filter_pointcloud = true;
+      bool use_freespace_pointcloud = true;
     virtual void cloudMsgCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg) override;
   };
 }

@@ -11,7 +11,10 @@ namespace occupancy_map_monitor {
 
     EsdfMap::EsdfMap(const std::string &filename):voxblox::EsdfServer(ros::NodeHandle(), ros::NodeHandle("~voxblox")), DistanceField(0,0,0,0,0,0,0) { init(); }
 
-    void EsdfMap::init() {}
+    void EsdfMap::init() {
+        ros::NodeHandle nh("~voxblox");
+        nh.param("convert_to_octree", convert_to_octree, false);
+    }
 
     bool EsdfMap::writeBinary(const std::string &filename)  {
       return saveMap(filename);
@@ -30,8 +33,11 @@ namespace occupancy_map_monitor {
 
 
     void EsdfMap::getOctreeMessage(octomap_msgs::Octomap* msg)const {
-        SWRI_PROFILE("EsdfMap/getOctreeMessage");
-      voxblox::serializeLayerAsOctomapMsg(this->getTsdfMapPtr()->getTsdfLayer(),msg, 0.75);
+
+        if(convert_to_octree) {
+            SWRI_PROFILE("EsdfMap/getOctreeMessage_convert_to_octree");
+            voxblox::serializeLayerAsOctomapMsg(this->getTsdfMapPtr()->getTsdfLayer(), msg, 0.75);
+        }
     }
 
 

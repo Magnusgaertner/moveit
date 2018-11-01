@@ -484,10 +484,6 @@ void PlanningScene::pushDiffs(const PlanningScenePtr& scene)
     scene->propogateRobotPadding();
   }
 
-  //TODO is this really what we want? nope
-  if(world_->getMapPtr()){
-    scene->world_->setMapPtr(world_->getMapPtr());
-  }
   if (world_diff_)
   {
     for (collision_detection::WorldDiff::const_iterator it = world_diff_->begin(); it != world_diff_->end(); ++it)
@@ -508,6 +504,9 @@ void PlanningScene::pushDiffs(const PlanningScenePtr& scene)
         if (hasObjectType(it->first))
           scene->setObjectType(it->first, getObjectType(it->first));
       }
+    }
+    if(world_diff_->getDoMapUpdate()){
+      scene->world_->setMapPtr(world_->getMapPtr());
     }
   }
 }
@@ -747,7 +746,7 @@ void PlanningScene::getPlanningSceneDiffMsg(moveit_msgs::PlanningScene& scene_ms
 
   if (world_diff_)
   {
-    bool do_omap = false;
+    bool do_omap = world_diff_->getDoMapUpdate();
     for (collision_detection::WorldDiff::const_iterator it = world_diff_->begin(); it != world_diff_->end(); ++it)
     {
       if (it->first == OCTOMAP_NS)

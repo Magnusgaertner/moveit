@@ -24,6 +24,7 @@ find_package(catkin REQUIRED COMPONENTS
   eigen_conversions
   voxblox_ros
   chomp_motion_planner
+        swri_profiler
 )
 
 find_package(Eigen3 REQUIRED)

@@ -42,7 +42,7 @@
 #include <moveit_ros_planning/PlanningSceneMonitorDynamicReconfigureConfig.h>
 #include <tf_conversions/tf_eigen.h>
 #include <moveit/profiler/profiler.h>
-
+#include <swri_profiler/profiler.h>
 #include <memory>
 
 #include <moveit/occupancy_map_monitor/esdf_map.h>
@@ -995,6 +995,7 @@ bool planning_scene_monitor::PlanningSceneMonitor::getShapeTransformCache(
 
     for (LinkShapeHandles::const_iterator it = link_shape_handles_.begin(); it != link_shape_handles_.end(); ++it)
     {
+        SWRI_PROFILE("links");
       tf::StampedTransform tr;
       tf_->waitForTransform(target_frame, it->first->getName(), target_time, shape_transform_cache_lookup_wait_time_);
       tf_->lookupTransform(target_frame, it->first->getName(), target_time, tr);
@@ -1006,6 +1007,7 @@ bool planning_scene_monitor::PlanningSceneMonitor::getShapeTransformCache(
     for (AttachedBodyShapeHandles::const_iterator it = attached_body_shape_handles_.begin();
          it != attached_body_shape_handles_.end(); ++it)
     {
+        SWRI_PROFILE("attached shapes");
       tf::StampedTransform tr;
       tf_->waitForTransform(target_frame, it->first->getAttachedLinkName(), target_time,
                             shape_transform_cache_lookup_wait_time_);
@@ -1016,6 +1018,7 @@ bool planning_scene_monitor::PlanningSceneMonitor::getShapeTransformCache(
         cache[it->second[k].first] = transform * it->first->getFixedTransforms()[it->second[k].second];
     }
     {
+        SWRI_PROFILE("links");
       tf::StampedTransform tr;
       tf_->waitForTransform(target_frame, scene_->getPlanningFrame(), target_time,
                             shape_transform_cache_lookup_wait_time_);
@@ -1023,9 +1026,12 @@ bool planning_scene_monitor::PlanningSceneMonitor::getShapeTransformCache(
       Eigen::Affine3d transform;
       tf::transformTFToEigen(tr, transform);
       for (CollisionBodyShapeHandles::const_iterator it = collision_body_shape_handles_.begin();
-           it != collision_body_shape_handles_.end(); ++it)
-        for (std::size_t k = 0; k < it->second.size(); ++k)
-          cache[it->second[k].first] = transform * (*it->second[k].second);
+           it != collision_body_shape_handles_.end(); ++it){
+        for (std::size_t k = 0; k < it->second.size(); ++k) {
+            SWRI_PROFILE("transform");
+            cache[it->second[k].first] = transform * (*it->second[k].second);
+        }
+      }
     }
   }
   catch (tf::TransformException& ex)

@@ -352,7 +352,8 @@ public:
    *  @param planning_scene_world_topic The topic to listen to for world scene geometry
    */
   void
-  startWorldGeometryMonitor(const std::string &collision_objects_topic, const std::string &planning_scene_world_topic);
+  startWorldGeometryMonitor(const std::string& collision_objects_topic = DEFAULT_COLLISION_OBJECT_TOPIC,
+                            const std::string& planning_scene_world_topic = DEFAULT_PLANNING_SCENE_WORLD_TOPIC);
 
   /** @brief Stop the world geometry monitor */
   void stopWorldGeometryMonitor();

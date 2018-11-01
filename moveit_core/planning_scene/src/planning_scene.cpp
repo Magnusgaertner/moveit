@@ -1404,31 +1404,9 @@ void PlanningScene::processOctomapPtr(const std::shared_ptr<const octomap::OcTre
 
   void PlanningScene::processMapPtr(const std::shared_ptr<collision_detection::MoveitMap>& octree, const Eigen::Affine3d& t)
   {
-    const collision_detection::MoveitMap* map = world_->getMapPtr().get();
-    if (map)
-    {
-
-        // check to see if we have the same octree pointer. pose check is not done as we do not have a pose here
-
-        if (map == octree.get())
-        {
-          //if the pointer did not change, the tree did not change aswell as we do not update the tree
-          // TODO check if we have the same octreeRepresentation of our esdf map
-          //if (world_diff_)
-          //  world_diff_->set(OCTOMAP_NS, collision_detection::World::DESTROY | collision_detection::World::CREATE |
-          //                              collision_detection::World::ADD_SHAPE);
-
-          return;
-        }
-
-    }
-    //set theMapPtr
     world_->setMapPtr(octree);
-    //world_->setMapPose(t);
-    // if the octree pointer changed, update the structure
-    //world_->removeObject(OCTOMAP_NS);
-    //this "octree" has no collision objects
-    //world_->addToObject(OCTOMAP_NS,shapes::ShapeConstPtr(new shapes::OcTree()),t);
+    if(world_diff_)
+      world_diff_->setDoMapUpdate();
   }
 
 bool PlanningScene::processAttachedCollisionObjectMsg(const moveit_msgs::AttachedCollisionObject& object)

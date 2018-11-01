@@ -46,11 +46,11 @@ WorldDiff::~WorldDiff()
     old_world->removeObserver(observer_handle_);
 }
 
-WorldDiff::WorldDiff()
+WorldDiff::WorldDiff():map_update(false)
 {
 }
 
-WorldDiff::WorldDiff(const WorldPtr& world) : world_(world)
+WorldDiff::WorldDiff(const WorldPtr& world) : world_(world),map_update(false)
 {
   observer_handle_ = world->addObserver(boost::bind(&WorldDiff::notify, this, _1, _2));
 }
@@ -61,7 +61,7 @@ WorldDiff::WorldDiff(WorldDiff& other)
   if (world)
   {
     changes_ = other.changes_;
-
+    map_update = other.map_update;
     std::weak_ptr<World>(world).swap(world_);
     observer_handle_ = world->addObserver(boost::bind(&WorldDiff::notify, this, _1, _2));
   }
@@ -108,6 +108,15 @@ void WorldDiff::setWorld(const WorldPtr& world)
 void WorldDiff::clearChanges()
 {
   changes_.clear();
+  map_update = false;
+}
+
+void WorldDiff::setDoMapUpdate(){
+  map_update = true;
+}
+
+bool WorldDiff::getDoMapUpdate() const {
+  return map_update;
 }
 
 void WorldDiff::notify(const World::ObjectConstPtr& obj, World::Action action)

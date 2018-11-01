@@ -112,7 +112,12 @@ public:
   /** \brief Clear the internally maintained vector of changes */
   void clearChanges();
 
+  void setDoMapUpdate();
+  bool getDoMapUpdate() const;
+
 private:
+    bool map_update;
+
   /** \brief Notification function */
   void notify(const World::ObjectConstPtr&, World::Action);
 

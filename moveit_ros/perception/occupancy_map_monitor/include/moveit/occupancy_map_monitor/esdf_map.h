@@ -104,6 +104,8 @@ namespace occupancy_map_monitor {
 
     bool readFromStream(std::istream &stream) override;
 
+  private:
+      bool convert_to_octree = false;
   };
 
   typedef std::shared_ptr<EsdfMap> EsdfMapPtr;

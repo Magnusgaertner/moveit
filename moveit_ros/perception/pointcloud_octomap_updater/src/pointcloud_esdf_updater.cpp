@@ -56,6 +56,8 @@ namespace occupancy_map_monitor
       try {
         if (params.hasMember("filter_pointcloud"))
           MapUpdater::readXmlParam(params, "filter_pointcloud", &filter_pointcloud);
+        if (params.hasMember("use_freespace_pointcloud"))
+          MapUpdater::readXmlParam(params, "use_freespace_pointcloud", &use_freespace_pointcloud);
       }
       catch (XmlRpc::XmlRpcException &ex) {
         ROS_ERROR("XmlRpc Exception: %s", ex.getMessage().c_str());
@@ -174,8 +176,8 @@ namespace occupancy_map_monitor
             /* check for NaN */
             if (!std::isnan(pt_iter[0]) && !std::isnan(pt_iter[1]) && !std::isnan(pt_iter[2]))
             {
-              /* transform to map frame */
-              tf::Vector3 point_tf = map_H_sensor * tf::Vector3(pt_iter[0], pt_iter[1], pt_iter[2]);
+
+              tf::Vector3 point_tf(pt_iter[0], pt_iter[1], pt_iter[2]);
 
               /* occupied cell at ray endpoint if ray is shorter than max range and this point
                  isn't on a part of the robot*/
@@ -201,21 +203,6 @@ namespace occupancy_map_monitor
             }
           }
         }
-/*
-      // compute the free cells along each ray that ends at an occupied cell
-      for (octomap::KeySet::iterator it = occupied_cells.begin(), end = occupied_cells.end(); it != end; ++it)
-        if (tree_->computeRayKeys(sensor_origin, tree_->keyToCoord(*it), key_ray_))
-          free_cells.insert(key_ray_.begin(), key_ray_.end());
-
-      // compute the free cells along each ray that ends at a model cell
-      for (octomap::KeySet::iterator it = model_cells.begin(), end = model_cells.end(); it != end; ++it)
-        if (tree_->computeRayKeys(sensor_origin, tree_->keyToCoord(*it), key_ray_))
-          free_cells.insert(key_ray_.begin(), key_ray_.end());
-
-      // compute the free cells along each ray that ends at a clipped cell
-      for (octomap::KeySet::iterator it = clip_cells.begin(), end = clip_cells.end(); it != end; ++it)
-        if (tree_->computeRayKeys(sensor_origin, tree_->keyToCoord(*it), key_ray_))
-          free_cells.insert(key_ray_.begin(), key_ray_.end());*/
       }
       catch (...)
       {
@@ -224,38 +211,6 @@ namespace occupancy_map_monitor
       }
 
       tree_->unlockRead();
-
-      /* cells that overlap with the model are not occupied */
-      /*for (octomap::KeySet::iterator it = model_cells.begin(), end = model_cells.end(); it != end; ++it)
-        occupied_cells.erase(*it);
-
-      // occupied cells are not free
-      for (octomap::KeySet::iterator it = occupied_cells.begin(), end = occupied_cells.end(); it != end; ++it)
-        free_cells.erase(*it);*/
-/*
-    tree_->lockWrite();
-
-    try
-    {
-      // mark free cells only if not seen occupied in this cloud
-      for (octomap::KeySet::iterator it = free_cells.begin(), end = free_cells.end(); it != end; ++it)
-        tree_->updateNode(*it, false);
-
-      // now mark all occupied cells
-      for (octomap::KeySet::iterator it = occupied_cells.begin(), end = occupied_cells.end(); it != end; ++it)
-        tree_->updateNode(*it, true);
-
-      // set the logodds to the minimum for the cells that are part of the model
-      const float lg = tree_->getClampingThresMinLog() - tree_->getClampingThresMaxLog();
-      for (octomap::KeySet::iterator it = model_cells.begin(), end = model_cells.end(); it != end; ++it)
-        tree_->updateNode(*it, lg);
-    }
-    catch (...)
-    {
-      ROS_ERROR("Internal error while updating octree");
-    }
-    tree_->unlockWrite();*/
-      //ROS_DEBUG("Processed point cloud in %lf ms", (ros::WallTime::now() - start).toSec() * 1000.0);
 
       sensor_msgs::PointCloud2Modifier pcd_modifier_(*filtered_cloud);
       pcd_modifier.resize(filtered_cloud_size);
@@ -266,7 +221,9 @@ namespace occupancy_map_monitor
       {
         SWRI_PROFILE("insertPointcloud_and_FreespacePointcloud");
         tree_->insertPointcloud(filtered_cloud);
-        tree_->insertFreespacePointcloud(freespace_cloud);
+        if(use_freespace_pointcloud){
+          tree_->insertFreespacePointcloud(freespace_cloud);
+        }
       }
 
       if (filtered_cloud_publisher_.getNumSubscribers() !=0)

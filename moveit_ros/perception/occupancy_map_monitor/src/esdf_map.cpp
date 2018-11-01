@@ -3,7 +3,9 @@
 
 #include <moveit/occupancy_map_monitor/esdf_map.h>
 #include <swri_profiler/profiler.h>
-
+#include <eigen_stl_containers/eigen_stl_containers.h>
+#include <voxblox/utils/planning_utils.h>
+#include <moveit/distance_field/propagation_distance_field.h>
 namespace occupancy_map_monitor {
 
 
@@ -45,13 +47,6 @@ namespace occupancy_map_monitor {
       return getEsdfMaxDistance();
     }
 
-    double EsdfMap::getDistance(int x, int y, int z) const {
-      ROS_ERROR("not supported");
-      return 0;
-      /*double distance;
-      vxblx->getEsdfMapPtr()->getDistanceAtPosition(Eigen::Vector3d(x,y,z), &distance);
-      return distance;*/
-    }
 
     double EsdfMap::getDistance(double x, double y , double z) const {
       double distance = getEsdfMaxDistance();
@@ -59,65 +54,77 @@ namespace occupancy_map_monitor {
       return distance;
     }
 
-    int EsdfMap::getXNumCells() const {
-      //TODO
-      ROS_ERROR("not supported");
-      return 0;
-    }
-
-    int EsdfMap::getYNumCells() const {
-      //TODO
-      ROS_ERROR("not supported");
-      return 0;
-    }
-
-    int EsdfMap::getZNumCells() const {
-      //TODO
-      ROS_ERROR("not supported");
-      return 0;
-    }
-
-    bool EsdfMap::worldToGrid(double world_x, double world_y, double world_z, int &x, int &y,
-                                                        int &z) const {
-      ROS_ERROR("not supported");
-      x = world_x; y = world_y; z = world_z;
-      return true;
-    }
-
 
     double EsdfMap::getDistanceGradient(double x, double y, double z, double &gradient_x,
                                                                   double &gradient_y, double &gradient_z,
                                                                   bool &in_bounds) const {
-
-
-      //ROS_INFO("%f, %f, %f distance : %f",2,0,1.5, getDistance(2.0, 0.0,1.5));
-
-      //ROS_INFO("voxblox getDistanceGradient called");
       Eigen::Vector3d gradient(gradient_x, gradient_y, gradient_z);
       double distance = getEsdfMaxDistance();
       in_bounds = getEsdfMapPtr()->getDistanceAndGradientAtPosition(Eigen::Vector3d(x, y, z), &distance,&gradient);
       return distance;//DistanceField::getDistanceGradient(x, y, z, gradient_x, gradient_y, gradient_z, in_bounds);
     }
 
+    bool EsdfMap::worldToGrid(double world_x, double world_y, double world_z, int &x, int &y,
+                     int &z) const {
+        double scale = 1/getEsdfMapPtr()->voxel_size();
+        x*=scale;
+        y*=scale;
+        z*=scale;
+        return true;
+    }
+
 
 
     void EsdfMap::addPointsToField(const EigenSTL::vector_Vector3d &points) {
-      //TODO
-      ROS_ERROR("not implemented");
-      return;
+        double max_distance = this->getEsdfMaxDistance();
+        voxblox::Layer<voxblox::EsdfVoxel>* layer = this->getEsdfMapPtr()->getEsdfLayerPtr();
+        for(auto& point: points)voxblox::utils::fillSphereAroundPoint(point,0.0, max_distance, layer);
     }
 
     void EsdfMap::removePointsFromField(const EigenSTL::vector_Vector3d &points) {
-      //TODO
-      ROS_ERROR("not implemented");
-      return;
+        double max_distance = this->getEsdfMaxDistance();
+        voxblox::Layer<voxblox::EsdfVoxel>* layer = this->getEsdfMapPtr()->getEsdfLayerPtr();
+        for(auto& point: points)voxblox::utils::clearSphereAroundPoint(point,0.0, max_distance, layer);
     }
 
     void EsdfMap::updatePointsInField(const EigenSTL::vector_Vector3d &old_points,
                                                                 const EigenSTL::vector_Vector3d &new_points) {
-      //TODO
-      ROS_ERROR("not implemented");
-      return;
+        VoxelSet old_point_set;
+        for (unsigned int i = 0; i < old_points.size(); i++)
+        {
+            Eigen::Vector3i voxel_loc;
+            bool valid = worldToGrid(old_points[i].x(), old_points[i].y(), old_points[i].z(), voxel_loc.x(), voxel_loc.y(),
+                                     voxel_loc.z());
+            if (valid)
+            {
+                old_point_set.insert(voxel_loc);
+            }
+        }
+
+        VoxelSet new_point_set;
+        for (unsigned int i = 0; i < new_points.size(); i++)
+        {
+            Eigen::Vector3i voxel_loc;
+            bool valid = worldToGrid(new_points[i].x(), new_points[i].y(), new_points[i].z(), voxel_loc.x(), voxel_loc.y(),
+                                     voxel_loc.z());
+            if (valid)
+            {
+                new_point_set.insert(voxel_loc);
+            }
+        }
+        distance_field::compareEigen_Vector3i comp;
+
+        EigenSTL::vector_Vector3i old_not_new;
+        std::set_difference(old_point_set.begin(), old_point_set.end(), new_point_set.begin(), new_point_set.end(),
+                            std::inserter(old_not_new, old_not_new.end()), comp);
+
+        EigenSTL::vector_Vector3i new_not_old;
+        std::set_difference(new_point_set.begin(), new_point_set.end(), old_point_set.begin(), old_point_set.end(),
+                            std::inserter(new_not_old, new_not_old.end()), comp);
+
+
+        removePointsFromField(old_not_new);
+        addPointsToField(new_not_in_current);
     }
 
     void EsdfMap::reset() {

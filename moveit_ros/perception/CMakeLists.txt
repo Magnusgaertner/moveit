@@ -46,6 +46,7 @@ find_package(catkin REQUIRED COMPONENTS
         glog_catkin
         voxblox_octomap_conversions
         octomap_msgs
+        moveit_experimental
         )
 
 find_package(Eigen3 REQUIRED)

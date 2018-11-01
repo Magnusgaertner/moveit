@@ -66,18 +66,11 @@ namespace occupancy_map_monitor {
 
     double getUninitializedDistance() const override ;
 
-    double getDistance(int x, int y, int z) const override;
 
     double getDistance(double x, double y , double z) const override;
 
-    int getXNumCells() const override;
 
-    int getYNumCells() const override ;
 
-    int getZNumCells() const override;
-
-    bool worldToGrid(double world_x, double world_y, double world_z, int &x, int &y,
-                                                        int &z) const override;
 
 
     double getDistanceGradient(double x, double y, double z, double &gradient_x,
@@ -90,6 +83,11 @@ namespace occupancy_map_monitor {
 
     void removePointsFromField(const EigenSTL::vector_Vector3d &points) override;
 
+    /***
+     * Taken from PropagationDistanceField
+     * @param old_points
+     * @param new_points
+     */
     void updatePointsInField(const EigenSTL::vector_Vector3d &old_points,
                                                                 const EigenSTL::vector_Vector3d &new_points) override;
 
@@ -104,8 +102,14 @@ namespace occupancy_map_monitor {
 
     bool readFromStream(std::istream &stream) override;
 
+
   private:
+      bool worldToGrid(double world_x, double world_y, double world_z, int &x, int &y,
+                       int &z)const ;
       bool convert_to_octree = false;
+
+      /** Typedef for set of integer indices, taken from PropagationDistanceField */
+      typedef std::set<Eigen::Vector3i, compareEigen_Vector3i, Eigen::aligned_allocator<Eigen::Vector3i>> VoxelSet;
   };
 
   typedef std::shared_ptr<EsdfMap> EsdfMapPtr;

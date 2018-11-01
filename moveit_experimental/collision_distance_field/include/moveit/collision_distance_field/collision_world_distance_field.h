@@ -174,7 +174,7 @@ public:
                         GroupStateRepresentationPtr& gsr) const;
 
 protected:
-  DistanceFieldCacheEntryPtr generateDistanceFieldCacheEntry();
+  virtual DistanceFieldCacheEntryPtr generateDistanceFieldCacheEntry();
 
   void updateDistanceObject(const std::string& id, CollisionWorldDistanceField::DistanceFieldCacheEntryPtr& dfce,
                             EigenSTL::vector_Vector3d& add_points, EigenSTL::vector_Vector3d& subtract_points);

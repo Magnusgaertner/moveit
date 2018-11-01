@@ -44,7 +44,12 @@
 #include <moveit/profiler/profiler.h>
 
 #include <memory>
-#include <moveit/occupancy_map_monitor/esdf_map.h>
+
+
+namespace occupancy_map_monitor{
+  MOVEIT_CLASS_FORWARD(EsdfMap)
+}
+
 
 namespace planning_scene_monitor
 {

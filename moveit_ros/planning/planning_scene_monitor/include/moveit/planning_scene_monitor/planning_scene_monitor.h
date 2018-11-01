@@ -52,7 +52,7 @@
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 #include <memory>
-#include <moveit/occupancy_map_monitor/esdf_map.h>
+
 #include <moveit/occupancy_map_monitor/map_monitor.h>
 #include <moveit/occupancy_map_monitor/map_updater.h>
 

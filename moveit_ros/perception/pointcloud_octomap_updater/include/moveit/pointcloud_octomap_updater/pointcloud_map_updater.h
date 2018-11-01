@@ -90,6 +90,7 @@ namespace occupancy_map_monitor {
     double scale_;
     double padding_;
     double max_range_;
+    double min_range_;
     unsigned int point_subsample_;
     double max_update_rate_;
     std::string filtered_cloud_topic_, freespace_cloud_topic_;

@@ -51,7 +51,7 @@ namespace occupancy_map_monitor {
   template <typename MapType>
   PointCloudMapUpdater<MapType>::PointCloudMapUpdater()
       : OccupancyMapUpdater<MapType>("PointCloudUpdater"), private_nh_("~"), scale_(1.0), padding_(0.0),
-        max_range_(std::numeric_limits<double>::infinity()), point_subsample_(1), max_update_rate_(0),
+        min_range_(0.0),max_range_(std::numeric_limits<double>::infinity()), point_subsample_(1), max_update_rate_(0),
         point_cloud_subscriber_(NULL), point_cloud_filter_(NULL) {
   }
 
@@ -67,6 +67,7 @@ namespace occupancy_map_monitor {
         return false;
       point_cloud_topic_ = static_cast<const std::string &>(params["point_cloud_topic"]);
 
+      MapUpdater::readXmlParam(params, "min_range", &min_range_);
       MapUpdater::readXmlParam(params, "max_range", &max_range_);
       MapUpdater::readXmlParam(params, "padding_offset", &padding_);
       MapUpdater::readXmlParam(params, "padding_scale", &scale_);

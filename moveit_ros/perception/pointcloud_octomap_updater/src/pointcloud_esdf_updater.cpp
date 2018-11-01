@@ -116,7 +116,7 @@ namespace occupancy_map_monitor
     }
     if(filter_pointcloud){
       /* mask out points on the robot */
-      shape_mask_->maskContainment(*cloud_msg, sensor_origin_eigen, min_range_, max_range_, mask_);
+      shape_mask_->maskContainment(*cloud_msg, sensor_origin_eigen, 0.0, max_range_, mask_);
       updateMask(*cloud_msg, sensor_origin_eigen, mask_);
 
 

@@ -45,11 +45,7 @@
 
 #include <memory>
 
-
-namespace occupancy_map_monitor{
-  MOVEIT_CLASS_FORWARD(EsdfMap)
-}
-
+#include <moveit/occupancy_map_monitor/esdf_map.h>
 
 namespace planning_scene_monitor
 {

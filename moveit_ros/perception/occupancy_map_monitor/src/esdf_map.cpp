@@ -78,18 +78,18 @@ namespace occupancy_map_monitor {
     void EsdfMap::addPointsToField(const EigenSTL::vector_Vector3d &points) {
         double max_distance = this->getEsdfMaxDistance();
         voxblox::Layer<voxblox::EsdfVoxel>* layer = this->getEsdfMapPtr()->getEsdfLayerPtr();
-        for(auto& point: points)voxblox::utils::fillSphereAroundPoint(point,0.0, max_distance, layer);
+        for(auto& point: points)voxblox::utils::fillSphereAroundPoint(point.cast<float>(),0.0, max_distance, layer);
     }
 
     void EsdfMap::removePointsFromField(const EigenSTL::vector_Vector3d &points) {
         double max_distance = this->getEsdfMaxDistance();
         voxblox::Layer<voxblox::EsdfVoxel>* layer = this->getEsdfMapPtr()->getEsdfLayerPtr();
-        for(auto& point: points)voxblox::utils::clearSphereAroundPoint(point,0.0, max_distance, layer);
+        for(auto& point: points)voxblox::utils::clearSphereAroundPoint(point.cast<float>(),0.0, max_distance, layer);
     }
 
     void EsdfMap::updatePointsInField(const EigenSTL::vector_Vector3d &old_points,
                                                                 const EigenSTL::vector_Vector3d &new_points) {
-        VoxelSet old_point_set;
+        /*VoxelSet old_point_set;
         for (unsigned int i = 0; i < old_points.size(); i++)
         {
             Eigen::Vector3i voxel_loc;
@@ -124,7 +124,7 @@ namespace occupancy_map_monitor {
 
 
         removePointsFromField(old_not_new);
-        addPointsToField(new_not_in_current);
+        addPointsToField(new_not_in_current);*/
     }
 
     void EsdfMap::reset() {

@@ -102,6 +102,22 @@ namespace occupancy_map_monitor {
 
     bool readFromStream(std::istream &stream) override;
 
+      double getDistance(int x, int y, int z) const override {
+          return 0;
+      }
+
+      int getXNumCells() const override {
+          return 0;
+      }
+
+      int getYNumCells() const override {
+          return 0;
+      }
+
+      int getZNumCells() const override {
+          return 0;
+      }
+
 
   private:
       bool worldToGrid(double world_x, double world_y, double world_z, int &x, int &y,
@@ -109,7 +125,7 @@ namespace occupancy_map_monitor {
       bool convert_to_octree = false;
 
       /** Typedef for set of integer indices, taken from PropagationDistanceField */
-      typedef std::set<Eigen::Vector3i, compareEigen_Vector3i, Eigen::aligned_allocator<Eigen::Vector3i>> VoxelSet;
+     // typedef std::set<Eigen::Vector3i, compareEigen_Vector3i, Eigen::aligned_allocator<Eigen::Vector3i>> VoxelSet;
   };
 
   typedef std::shared_ptr<EsdfMap> EsdfMapPtr;

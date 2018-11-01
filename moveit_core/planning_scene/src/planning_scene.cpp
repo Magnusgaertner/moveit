@@ -1414,9 +1414,9 @@ void PlanningScene::processOctomapPtr(const std::shared_ptr<const octomap::OcTre
         {
           //if the pointer did not change, the tree did not change aswell as we do not update the tree
           // TODO check if we have the same octreeRepresentation of our esdf map
-          if (world_diff_)
-            world_diff_->set(OCTOMAP_NS, collision_detection::World::DESTROY | collision_detection::World::CREATE |
-                                         collision_detection::World::ADD_SHAPE);
+          //if (world_diff_)
+          //  world_diff_->set(OCTOMAP_NS, collision_detection::World::DESTROY | collision_detection::World::CREATE |
+          //                              collision_detection::World::ADD_SHAPE);
 
           return;
         }
@@ -1426,9 +1426,9 @@ void PlanningScene::processOctomapPtr(const std::shared_ptr<const octomap::OcTre
     world_->setMapPtr(octree);
     //world_->setMapPose(t);
     // if the octree pointer changed, update the structure
-    world_->removeObject(OCTOMAP_NS);
+    //world_->removeObject(OCTOMAP_NS);
     //this "octree" has no collision objects
-    world_->addToObject(OCTOMAP_NS,shapes::ShapeConstPtr(new shapes::OcTree()),t);
+    //world_->addToObject(OCTOMAP_NS,shapes::ShapeConstPtr(new shapes::OcTree()),t);
   }
 
 bool PlanningScene::processAttachedCollisionObjectMsg(const moveit_msgs::AttachedCollisionObject& object)

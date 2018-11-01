@@ -350,11 +350,9 @@ public:
    * this function starts the OccupancyMapMonitor as well.
    *  @param collision_objects_topic The topic on which to listen for collision objects
    *  @param planning_scene_world_topic The topic to listen to for world scene geometry
-   *  @param load_octomap_monitor Flag to disable octomap monitor if desired
    */
-  void startWorldGeometryMonitor(const std::string& collision_objects_topic = DEFAULT_COLLISION_OBJECT_TOPIC,
-                                 const std::string& planning_scene_world_topic = DEFAULT_PLANNING_SCENE_WORLD_TOPIC,
-                                 const bool load_octomap_monitor = true, const bool load_esdf_monitor = false);
+  void
+  startWorldGeometryMonitor(const std::string &collision_objects_topic, const std::string &planning_scene_world_topic);
 
   /** @brief Stop the world geometry monitor */
   void stopWorldGeometryMonitor();

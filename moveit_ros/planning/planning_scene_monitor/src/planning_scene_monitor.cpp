@@ -1036,9 +1036,7 @@ bool planning_scene_monitor::PlanningSceneMonitor::getShapeTransformCache(
   return true;
 }
 
-void planning_scene_monitor::PlanningSceneMonitor::startWorldGeometryMonitor(
-    const std::string& collision_objects_topic, const std::string& planning_scene_world_topic,
-    const bool load_octomap_monitor, const bool load_esdf_monitor)
+void planning_scene_monitor::PlanningSceneMonitor::startWorldGeometryMonitor(const std::string &collision_objects_topic, const std::string &planning_scene_world_topic)
 {
   stopWorldGeometryMonitor();
   ROS_INFO_NAMED(LOGNAME, "Starting world geometry monitor");
@@ -1075,36 +1073,39 @@ void planning_scene_monitor::PlanningSceneMonitor::startWorldGeometryMonitor(
                    root_nh_.resolveName(planning_scene_world_topic).c_str());
   }
 
-  // Ocotomap monitor is optional
 
-  if (nh_.param("load_octomap_monitor", false))
-  {
-    if (!octomap_monitor_)
-    {
-      octomap_monitor_.reset(new occupancy_map_monitor::OccupancyMapMonitor<occupancy_map_monitor::OccMapTree>(tf_, scene_->getPlanningFrame()));
-      excludeRobotLinksFromOctree();
-      excludeAttachedBodiesFromOctree();
-      excludeWorldObjectsFromOctree();
 
-      octomap_monitor_->setTransformCacheCallback(
-          boost::bind(&PlanningSceneMonitor::getShapeTransformCache, this, _1, _2, _3));
-      octomap_monitor_->setUpdateCallback(boost::bind(&PlanningSceneMonitor::octomapUpdateCallback, this));
+
+    std::string map_type;
+    nh_.param("map_type", map_type,std::string("none"));
+    if(!map_type.compare("octomap")){
+        if (!octomap_monitor_)
+        {
+            octomap_monitor_.reset(new occupancy_map_monitor::OccupancyMapMonitor<occupancy_map_monitor::OccMapTree>(tf_, scene_->getPlanningFrame()));
+            excludeRobotLinksFromOctree();
+            excludeAttachedBodiesFromOctree();
+            excludeWorldObjectsFromOctree();
+
+            octomap_monitor_->setTransformCacheCallback(
+                    boost::bind(&PlanningSceneMonitor::getShapeTransformCache, this, _1, _2, _3));
+            octomap_monitor_->setUpdateCallback(boost::bind(&PlanningSceneMonitor::octomapUpdateCallback, this));
+        }
+        octomap_monitor_->startMonitor();
+    }else if(!map_type.compare("esdf")){
+        if (!octomap_monitor_)
+        {
+            octomap_monitor_.reset(new occupancy_map_monitor::OccupancyMapMonitor<occupancy_map_monitor::EsdfMap>(tf_, scene_->getPlanningFrame()));
+            excludeRobotLinksFromOctree();
+            excludeAttachedBodiesFromOctree();
+            excludeWorldObjectsFromOctree();
+
+            octomap_monitor_->setTransformCacheCallback(
+                    boost::bind(&PlanningSceneMonitor::getShapeTransformCache, this, _1, _2, _3));
+            octomap_monitor_->setUpdateCallback(boost::bind(&PlanningSceneMonitor::esdfUpdateCallback, this));
+        }
+        octomap_monitor_->startMonitor();
     }
-    octomap_monitor_->startMonitor();
-  }else{
-    if (!octomap_monitor_)
-    {
-      octomap_monitor_.reset(new occupancy_map_monitor::OccupancyMapMonitor<occupancy_map_monitor::EsdfMap>(tf_, scene_->getPlanningFrame()));
-      excludeRobotLinksFromOctree();
-      excludeAttachedBodiesFromOctree();
-      excludeWorldObjectsFromOctree();
 
-      octomap_monitor_->setTransformCacheCallback(
-          boost::bind(&PlanningSceneMonitor::getShapeTransformCache, this, _1, _2, _3));
-      octomap_monitor_->setUpdateCallback(boost::bind(&PlanningSceneMonitor::esdfUpdateCallback, this));
-    }
-    octomap_monitor_->startMonitor();
-  }
 }
 
 void planning_scene_monitor::PlanningSceneMonitor::stopWorldGeometryMonitor()

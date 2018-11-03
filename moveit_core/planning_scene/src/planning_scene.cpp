@@ -1403,7 +1403,8 @@ void PlanningScene::processOctomapPtr(const std::shared_ptr<const octomap::OcTre
 
   void PlanningScene::processMapPtr(const std::shared_ptr<collision_detection::MoveitMap>& octree, const Eigen::Affine3d& t)
   {
-    world_->setMapPtr(octree);
+    if(world_)
+      world_->setMapPtr(octree);
     if(world_diff_)
       world_diff_->setDoMapUpdate();
   }

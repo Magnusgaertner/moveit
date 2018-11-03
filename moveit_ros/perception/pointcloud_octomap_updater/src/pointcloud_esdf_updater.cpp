@@ -212,7 +212,10 @@ namespace occupancy_map_monitor {
             }
             {
                 SWRI_PROFILE("4");
+                ros::WallTime before = ros::WallTime::now();
                 tree_->lockWrite();
+                ros::WallTime after = ros::WallTime::now();
+                //ROS_ERROR("aquiring map write lock took: %f",(after-before).toSec());
                 try {
                     SWRI_PROFILE("insertPointcloud_and_FreespacePointcloud");
                     tree_->insertPointcloud(filtered_cloud);

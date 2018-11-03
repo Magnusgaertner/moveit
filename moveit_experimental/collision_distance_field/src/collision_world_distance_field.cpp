@@ -40,11 +40,12 @@
 #include <moveit/distance_field/propagation_distance_field.h>
 #include <boost/bind.hpp>
 #include <memory>
-
+#include <swri_profiler/profiler.h>
 namespace collision_detection
 {
 CollisionWorldDistanceField::~CollisionWorldDistanceField()
 {
+  SWRI_PROFILE("~CollisionWorldDistanceField");
   getWorld()->removeObserver(observer_handle_);
 }
 
@@ -59,6 +60,7 @@ CollisionWorldDistanceField::CollisionWorldDistanceField(Eigen::Vector3d size, E
   , collision_tolerance_(collision_tolerance)
   , max_propogation_distance_(max_propogation_distance)
 {
+  SWRI_PROFILE("CollisionWorldDistanceField1");
   distance_field_cache_entry_ = generateDistanceFieldCacheEntry();
 
   // request notifications about changes to world
@@ -78,6 +80,7 @@ CollisionWorldDistanceField::CollisionWorldDistanceField(const WorldPtr& world, 
   , collision_tolerance_(collision_tolerance)
   , max_propogation_distance_(max_propogation_distance)
 {
+  SWRI_PROFILE("CollisionWorldDistanceField2");
   distance_field_cache_entry_ = generateDistanceFieldCacheEntry();
 
   // request notifications about changes to world
@@ -90,14 +93,16 @@ CollisionWorldDistanceField::CollisionWorldDistanceField(const CollisionWorldDis
                                                          const WorldPtr& world)
   : CollisionWorld(other, world)
 {
+  SWRI_PROFILE("CollisionWorldDistanceField3");
   size_ = other.size_;
   origin_ = other.origin_;
   use_signed_distance_field_ = other.use_signed_distance_field_;
   resolution_ = other.resolution_;
   collision_tolerance_ = other.collision_tolerance_;
   max_propogation_distance_ = other.max_propogation_distance_;
-  distance_field_cache_entry_ = generateDistanceFieldCacheEntry();
 
+  distance_field_cache_entry_ = other.distance_field_cache_entry_; //why cant we use the previous chache entry?//this->generateDistanceFieldCacheEntry();
+  last_gsr_ = other.last_gsr_;
   // request notifications about changes to world
   observer_handle_ =
       getWorld()->addObserver(boost::bind(&CollisionWorldDistanceField::notifyObjectChange, this, _1, _2));
@@ -108,6 +113,7 @@ void CollisionWorldDistanceField::checkCollision(const CollisionRequest& req, Co
                                                  const CollisionRobot& robot,
                                                  const robot_state::RobotState& state) const
 {
+  SWRI_PROFILE("checkCollision1");
   GroupStateRepresentationPtr gsr;
   checkCollision(req, res, robot, state, gsr);
 }
@@ -116,6 +122,7 @@ void CollisionWorldDistanceField::checkCollision(const CollisionRequest& req, Co
                                                  const CollisionRobot& robot, const robot_state::RobotState& state,
                                                  GroupStateRepresentationPtr& gsr) const
 {
+  SWRI_PROFILE("checkCollision2");
   try
   {
     const CollisionRobotDistanceField& cdr = dynamic_cast<const CollisionRobotDistanceField&>(robot);
@@ -150,6 +157,7 @@ void CollisionWorldDistanceField::checkCollision(const CollisionRequest& req, Co
                                                  const CollisionRobot& robot, const robot_state::RobotState& state,
                                                  const AllowedCollisionMatrix& acm) const
 {
+  SWRI_PROFILE("checkCollision3");
   GroupStateRepresentationPtr gsr;
   checkCollision(req, res, robot, state, acm, gsr);
 }
@@ -159,6 +167,7 @@ void CollisionWorldDistanceField::checkCollision(const CollisionRequest& req, Co
                                                  const AllowedCollisionMatrix& acm,
                                                  GroupStateRepresentationPtr& gsr) const
 {
+  SWRI_PROFILE("checkCollision4");
   try
   {
     const CollisionRobotDistanceField& cdr = dynamic_cast<const CollisionRobotDistanceField&>(robot);
@@ -193,14 +202,17 @@ void CollisionWorldDistanceField::checkRobotCollision(const CollisionRequest& re
                                                       const CollisionRobot& robot,
                                                       const robot_state::RobotState& state) const
 {
+  SWRI_PROFILE("checkRobotCollision1");
   GroupStateRepresentationPtr gsr;
   checkRobotCollision(req, res, robot, state, gsr);
+
 }
 
 void CollisionWorldDistanceField::checkRobotCollision(const CollisionRequest& req, CollisionResult& res,
                                                       const CollisionRobot& robot, const robot_state::RobotState& state,
                                                       GroupStateRepresentationPtr& gsr) const
 {
+  SWRI_PROFILE("checkRobotCollision2");
   distance_field::DistanceFieldConstPtr env_distance_field = distance_field_cache_entry_->distance_field_;
   try
   {
@@ -230,6 +242,7 @@ void CollisionWorldDistanceField::checkRobotCollision(const CollisionRequest& re
                                                       const CollisionRobot& robot, const robot_state::RobotState& state,
                                                       const AllowedCollisionMatrix& acm) const
 {
+  SWRI_PROFILE("checkRobotCollision3");
   GroupStateRepresentationPtr gsr;
   checkRobotCollision(req, res, robot, state, acm, gsr);
 }
@@ -239,6 +252,7 @@ void CollisionWorldDistanceField::checkRobotCollision(const CollisionRequest& re
                                                       const AllowedCollisionMatrix& acm,
                                                       GroupStateRepresentationPtr& gsr) const
 {
+  SWRI_PROFILE("checkRobotCollision4");
   distance_field::DistanceFieldConstPtr env_distance_field = distance_field_cache_entry_->distance_field_;
   try
   {
@@ -270,6 +284,7 @@ void CollisionWorldDistanceField::getCollisionGradients(const CollisionRequest& 
                                                         const AllowedCollisionMatrix* acm,
                                                         GroupStateRepresentationPtr& gsr) const
 {
+  SWRI_PROFILE("getCollisionGradients");
   distance_field::DistanceFieldConstPtr env_distance_field = distance_field_cache_entry_->distance_field_;
   try
   {
@@ -300,6 +315,7 @@ void CollisionWorldDistanceField::getAllCollisions(const CollisionRequest& req, 
                                                    const AllowedCollisionMatrix* acm,
                                                    GroupStateRepresentationPtr& gsr) const
 {
+  SWRI_PROFILE("getAllCollisions");
   try
   {
     const CollisionRobotDistanceField& cdr = dynamic_cast<const CollisionRobotDistanceField&>(robot);
@@ -329,6 +345,7 @@ bool CollisionWorldDistanceField::getEnvironmentCollisions(
     const CollisionRequest& req, CollisionResult& res, const distance_field::DistanceFieldConstPtr& env_distance_field,
     GroupStateRepresentationPtr& gsr) const
 {
+  SWRI_PROFILE("getEnvironmentCollisions");
   for (unsigned int i = 0; i < gsr->dfce_->link_names_.size() + gsr->dfce_->attached_body_names_.size(); i++)
   {
     bool is_link = i < gsr->dfce_->link_names_.size();
@@ -412,6 +429,7 @@ bool CollisionWorldDistanceField::getEnvironmentCollisions(
 bool CollisionWorldDistanceField::getEnvironmentProximityGradients(
     const distance_field::DistanceFieldConstPtr& env_distance_field, GroupStateRepresentationPtr& gsr) const
 {
+  SWRI_PROFILE("getEnvironmentProximityGradients");
   bool in_collision = false;
   for (unsigned int i = 0; i < gsr->dfce_->link_names_.size(); i++)
   {
@@ -449,6 +467,7 @@ bool CollisionWorldDistanceField::getEnvironmentProximityGradients(
 
 void CollisionWorldDistanceField::setWorld(const WorldPtr& world)
 {
+  SWRI_PROFILE("setWorld");
   if (world == getWorld())
     return;
 
@@ -471,6 +490,8 @@ void CollisionWorldDistanceField::setWorld(const WorldPtr& world)
 void CollisionWorldDistanceField::notifyObjectChange(CollisionWorldDistanceField* self, const ObjectConstPtr& obj,
                                                      World::Action action)
 {
+
+  SWRI_PROFILE("notifyObjectChangeDistanceField");
   ros::WallTime n = ros::WallTime::now();
 
   EigenSTL::vector_Vector3d add_points;
@@ -479,19 +500,22 @@ void CollisionWorldDistanceField::notifyObjectChange(CollisionWorldDistanceField
 
   if (action == World::DESTROY)
   {
+    SWRI_PROFILE("Destroy");
     self->distance_field_cache_entry_->distance_field_->removePointsFromField(subtract_points);
   }
   else if (action & (World::MOVE_SHAPE | World::REMOVE_SHAPE))
   {
+    SWRI_PROFILE("MoveRemove");
     self->distance_field_cache_entry_->distance_field_->removePointsFromField(subtract_points);
     self->distance_field_cache_entry_->distance_field_->addPointsToField(add_points);
   }
   else
   {
+    SWRI_PROFILE("addPointsToField");
     self->distance_field_cache_entry_->distance_field_->addPointsToField(add_points);
   }
 
-  ROS_DEBUG_NAMED("collision_distance_field", "Modifying object %s took %lf s", obj->id_.c_str(),
+  ROS_ERROR("collision_distance_field", "Modifying object %s took %lf s", obj->id_.c_str(),
                   (ros::WallTime::now() - n).toSec());
 }
 
@@ -499,6 +523,7 @@ void CollisionWorldDistanceField::updateDistanceObject(const std::string& id, Di
                                                        EigenSTL::vector_Vector3d& add_points,
                                                        EigenSTL::vector_Vector3d& subtract_points)
 {
+  SWRI_PROFILE("updateDistanceObject");
   std::map<std::string, std::vector<PosedBodyPointDecompositionPtr>>::iterator cur_it =
       dfce->posed_body_point_decompositions_.find(id);
   if (cur_it != dfce->posed_body_point_decompositions_.end())
@@ -548,6 +573,7 @@ void CollisionWorldDistanceField::updateDistanceObject(const std::string& id, Di
 
 CollisionWorldDistanceField::DistanceFieldCacheEntryPtr CollisionWorldDistanceField::generateDistanceFieldCacheEntry()
 {
+  SWRI_PROFILE("generateDistanceFieldCacheEntry");
   DistanceFieldCacheEntryPtr dfce(new DistanceFieldCacheEntry());
   dfce->distance_field_.reset(new distance_field::PropagationDistanceField(
       size_.x(), size_.y(), size_.z(), resolution_, origin_.x() - 0.5 * size_.x(), origin_.y() - 0.5 * size_.y(),

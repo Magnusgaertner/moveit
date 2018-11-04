@@ -36,15 +36,16 @@
 
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 #include <moveit/robot_model_loader/robot_model_loader.h>
-#include <moveit/exceptions/exceptions.h>
 #include <moveit_msgs/GetPlanningScene.h>
 
 #include <dynamic_reconfigure/server.h>
 #include <moveit_ros_planning/PlanningSceneMonitorDynamicReconfigureConfig.h>
 #include <tf_conversions/tf_eigen.h>
 #include <moveit/profiler/profiler.h>
-
+#include <swri_profiler/profiler.h>
 #include <memory>
+
+#include <moveit/occupancy_map_monitor/esdf_map.h>
 
 namespace planning_scene_monitor
 {
@@ -184,6 +185,7 @@ void planning_scene_monitor::PlanningSceneMonitor::initialize(const planning_sce
 {
   moveit::tools::Profiler::ScopedStart prof_start;
   moveit::tools::Profiler::ScopedBlock prof_block("PlanningSceneMonitor::initialize");
+  ROS_ERROR("initializing planning scene");
 
   if (monitor_name_.empty())
     monitor_name_ = "planning_scene_monitor";
@@ -258,6 +260,7 @@ void planning_scene_monitor::PlanningSceneMonitor::initialize(const planning_sce
                                             false);  // do not start the timer yet
 
   reconfigure_impl_ = new DynamicReconfigureImpl(this);
+  //ROS_ERROR("move groups planning scene monitor uses active collision detector: %s",scene->getActiveCollisionDetectorName());
 }
 
 void planning_scene_monitor::PlanningSceneMonitor::monitorDiffs(bool flag)
@@ -266,7 +269,7 @@ void planning_scene_monitor::PlanningSceneMonitor::monitorDiffs(bool flag)
   {
     if (flag)
     {
-      boost::unique_lock<boost::shared_mutex> ulock(scene_update_mutex_);
+      boost::unique_lock<boost::shared_mutex> ulock(scene_update_mutex_);ROS_ERROR("scene_update_mutex exclusive by: %d, monitorDiffs" , getpid());
       if (scene_)
       {
         scene_->setAttachedBodyUpdateCallback(robot_state::AttachedBodyCallback());
@@ -290,7 +293,7 @@ void planning_scene_monitor::PlanningSceneMonitor::monitorDiffs(bool flag)
         stopPublishingPlanningScene();
       }
       {
-        boost::unique_lock<boost::shared_mutex> ulock(scene_update_mutex_);
+        boost::unique_lock<boost::shared_mutex> ulock(scene_update_mutex_);ROS_ERROR("scene_update_mutex exclusive by: %d" , getpid());
         if (scene_)
         {
           scene_->decoupleParent();
@@ -358,9 +361,14 @@ void planning_scene_monitor::PlanningSceneMonitor::scenePublishingThread()
     bool is_full = false;
     ros::Rate rate(publish_planning_scene_frequency_);
     {
-      boost::unique_lock<boost::shared_mutex> ulock(scene_update_mutex_);
-      while (new_scene_update_ == UPDATE_NONE && publish_planning_scene_)
-        new_scene_update_condition_.wait(ulock);
+        boost::unique_lock<boost::shared_mutex> ulock(scene_update_mutex_);
+        ROS_ERROR("scene_update_mutex exclusive by: %d, updateFrameTransforms", getpid());
+        while (new_scene_update_ == UPDATE_NONE && publish_planning_scene_)
+          new_scene_update_condition_.wait(ulock);
+        if(!ulock.owns_lock()){
+          ulock.lock();
+        }
+        SWRI_PROFILE("publishingThread");
       if (new_scene_update_ != UPDATE_NONE)
       {
         if ((publish_update_types_ & new_scene_update_) || new_scene_update_ == UPDATE_SCENE)
@@ -374,6 +382,7 @@ void planning_scene_monitor::PlanningSceneMonitor::scenePublishingThread()
               lock = octomap_monitor_->getOcTreePtr()->reading();
             scene_->getPlanningSceneDiffMsg(msg);
           }
+          ROS_ERROR("shape_handles_lock_ owned by: %d", shape_handles_lock_.native_handle()->__data.__owner);
           boost::recursive_mutex::scoped_lock prevent_shape_cache_updates(shape_handles_lock_);  // we don't want the
                                                                                                  // transform cache to
                                                                                                  // update while we are
@@ -524,9 +533,11 @@ bool planning_scene_monitor::PlanningSceneMonitor::newPlanningSceneMessage(const
   SceneUpdateType upd = UPDATE_SCENE;
   std::string old_scene_name;
   {
-    boost::unique_lock<boost::shared_mutex> ulock(scene_update_mutex_);
+    boost::unique_lock<boost::shared_mutex> ulock(scene_update_mutex_,boost::defer_lock);
     // we don't want the transform cache to update while we are potentially changing attached bodies
-    boost::recursive_mutex::scoped_lock prevent_shape_cache_updates(shape_handles_lock_);
+    ROS_ERROR("shape_handles_lock_ owned by: %d", shape_handles_lock_.native_handle()->__data.__owner);
+    boost::recursive_mutex::scoped_lock prevent_shape_cache_updates(shape_handles_lock_, boost::defer_lock);
+    boost::lock(ulock, prevent_shape_cache_updates);ROS_ERROR("scene_update_mutex exclusive by: %d, updateFrameTransforms" , getpid());
 
     last_update_time_ = ros::Time::now();
     last_robot_motion_time_ = scene.robot_state.joint_state.header.stamp;
@@ -601,7 +612,7 @@ void planning_scene_monitor::PlanningSceneMonitor::newPlanningSceneWorldCallback
   {
     updateFrameTransforms();
     {
-      boost::unique_lock<boost::shared_mutex> ulock(scene_update_mutex_);
+      boost::unique_lock<boost::shared_mutex> ulock(scene_update_mutex_);ROS_ERROR("scene_update_mutex exclusive by: %d, updateFrameTransforms" , getpid());
       last_update_time_ = ros::Time::now();
       scene_->getWorldNonConst()->clearObjects();
       scene_->processPlanningSceneWorldMsg(*world);
@@ -634,7 +645,7 @@ void planning_scene_monitor::PlanningSceneMonitor::collisionObjectCallback(
   {
     updateFrameTransforms();
     {
-      boost::unique_lock<boost::shared_mutex> ulock(scene_update_mutex_);
+      boost::unique_lock<boost::shared_mutex> ulock(scene_update_mutex_);ROS_ERROR("scene_update_mutex exclusive by: %d, updateFrameTransforms" , getpid());
       last_update_time_ = ros::Time::now();
       scene_->processCollisionObjectMsg(*obj);
     }
@@ -649,7 +660,7 @@ void planning_scene_monitor::PlanningSceneMonitor::attachObjectCallback(
   {
     updateFrameTransforms();
     {
-      boost::unique_lock<boost::shared_mutex> ulock(scene_update_mutex_);
+      boost::unique_lock<boost::shared_mutex> ulock(scene_update_mutex_);ROS_ERROR("scene_update_mutex exclusive by: %d, updateFrameTransforms" , getpid());
       last_update_time_ = ros::Time::now();
       scene_->processAttachedCollisionObjectMsg(*obj);
     }
@@ -661,7 +672,7 @@ void planning_scene_monitor::PlanningSceneMonitor::excludeRobotLinksFromOctree()
 {
   if (!octomap_monitor_)
     return;
-
+  ROS_ERROR("shape_handles_lock_ owned by: %d", shape_handles_lock_.native_handle()->__data.__owner);
   boost::recursive_mutex::scoped_lock _(shape_handles_lock_);
 
   includeRobotLinksInOctree();
@@ -697,7 +708,7 @@ void planning_scene_monitor::PlanningSceneMonitor::includeRobotLinksInOctree()
 {
   if (!octomap_monitor_)
     return;
-
+  ROS_ERROR("shape_handles_lock_ owned by: %d", shape_handles_lock_.native_handle()->__data.__owner);
   boost::recursive_mutex::scoped_lock _(shape_handles_lock_);
 
   for (LinkShapeHandles::iterator it = link_shape_handles_.begin(); it != link_shape_handles_.end(); ++it)
@@ -710,7 +721,7 @@ void planning_scene_monitor::PlanningSceneMonitor::includeAttachedBodiesInOctree
 {
   if (!octomap_monitor_)
     return;
-
+  ROS_ERROR("shape_handles_lock_ owned by: %d", shape_handles_lock_.native_handle()->__data.__owner);
   boost::recursive_mutex::scoped_lock _(shape_handles_lock_);
 
   // clear information about any attached body, without refering to the AttachedBody* ptr (could be invalid)
@@ -723,6 +734,7 @@ void planning_scene_monitor::PlanningSceneMonitor::includeAttachedBodiesInOctree
 
 void planning_scene_monitor::PlanningSceneMonitor::excludeAttachedBodiesFromOctree()
 {
+  ROS_ERROR("shape_handles_lock_ owned by: %d", shape_handles_lock_.native_handle()->__data.__owner);
   boost::recursive_mutex::scoped_lock _(shape_handles_lock_);
 
   includeAttachedBodiesInOctree();
@@ -737,7 +749,7 @@ void planning_scene_monitor::PlanningSceneMonitor::includeWorldObjectsInOctree()
 {
   if (!octomap_monitor_)
     return;
-
+  ROS_ERROR("shape_handles_lock_ owned by: %d", shape_handles_lock_.native_handle()->__data.__owner);
   boost::recursive_mutex::scoped_lock _(shape_handles_lock_);
 
   // clear information about any attached object
@@ -750,6 +762,7 @@ void planning_scene_monitor::PlanningSceneMonitor::includeWorldObjectsInOctree()
 
 void planning_scene_monitor::PlanningSceneMonitor::excludeWorldObjectsFromOctree()
 {
+  ROS_ERROR("shape_handles_lock_ owned by: %d", shape_handles_lock_.native_handle()->__data.__owner);
   boost::recursive_mutex::scoped_lock _(shape_handles_lock_);
 
   includeWorldObjectsInOctree();
@@ -763,7 +776,7 @@ void planning_scene_monitor::PlanningSceneMonitor::excludeAttachedBodyFromOctree
 {
   if (!octomap_monitor_)
     return;
-
+  ROS_ERROR("shape_handles_lock_ owned by: %d", shape_handles_lock_.native_handle()->__data.__owner);
   boost::recursive_mutex::scoped_lock _(shape_handles_lock_);
   bool found = false;
   for (std::size_t i = 0; i < attached_body->getShapes().size(); ++i)
@@ -786,7 +799,7 @@ void planning_scene_monitor::PlanningSceneMonitor::includeAttachedBodyInOctree(
 {
   if (!octomap_monitor_)
     return;
-
+  ROS_ERROR("shape_handles_lock_ owned by: %d", shape_handles_lock_.native_handle()->__data.__owner);
   boost::recursive_mutex::scoped_lock _(shape_handles_lock_);
 
   AttachedBodyShapeHandles::iterator it = attached_body_shape_handles_.find(attached_body);
@@ -804,7 +817,7 @@ void planning_scene_monitor::PlanningSceneMonitor::excludeWorldObjectFromOctree(
 {
   if (!octomap_monitor_)
     return;
-
+  ROS_ERROR("shape_handles_lock_ owned by: %d", shape_handles_lock_.native_handle()->__data.__owner);
   boost::recursive_mutex::scoped_lock _(shape_handles_lock_);
 
   bool found = false;
@@ -828,7 +841,7 @@ void planning_scene_monitor::PlanningSceneMonitor::includeWorldObjectInOctree(
 {
   if (!octomap_monitor_)
     return;
-
+  ROS_ERROR("shape_handles_lock_ owned by: %d", shape_handles_lock_.native_handle()->__data.__owner);
   boost::recursive_mutex::scoped_lock _(shape_handles_lock_);
 
   CollisionBodyShapeHandles::iterator it = collision_body_shape_handles_.find(obj->id_);
@@ -909,7 +922,7 @@ bool planning_scene_monitor::PlanningSceneMonitor::waitForCurrentRobotState(cons
   // Sometimes there is no state monitor. In this case state updates are received as part of scene updates only.
   // However, scene updates are only published if the robot actually moves. Hence we need a timeout!
   // As publishing planning scene updates is throttled (2Hz by default), a 1s timeout is a suitable default.
-  boost::shared_lock<boost::shared_mutex> lock(scene_update_mutex_);
+  boost::shared_lock<boost::shared_mutex> lock(scene_update_mutex_);ROS_ERROR("scene_update_mutex shared by: %d" , getpid());
   ros::Time prev_robot_motion_time = last_robot_motion_time_;
   while (last_robot_motion_time_ < t &&  // Wait until the state update actually reaches the scene.
          timeout > ros::WallDuration())
@@ -984,46 +997,59 @@ bool planning_scene_monitor::PlanningSceneMonitor::getShapeTransformCache(
     const std::string& target_frame, const ros::Time& target_time,
     occupancy_map_monitor::ShapeTransformCache& cache) const
 {
+  SWRI_PROFILE("getShapeTransformCache");
   if (!tf_)
     return false;
   try
   {
-    boost::recursive_mutex::scoped_lock _(shape_handles_lock_);
+    SWRI_PROFILE("withLock");
+    ROS_ERROR("shape_handles_lock_ owned by: %d", shape_handles_lock_.native_handle()->__data.__owner);
 
-    for (LinkShapeHandles::const_iterator it = link_shape_handles_.begin(); it != link_shape_handles_.end(); ++it)
+    boost::recursive_mutex::scoped_lock _(shape_handles_lock_);
     {
-      tf::StampedTransform tr;
-      tf_->waitForTransform(target_frame, it->first->getName(), target_time, shape_transform_cache_lookup_wait_time_);
-      tf_->lookupTransform(target_frame, it->first->getName(), target_time, tr);
-      Eigen::Affine3d ttr;
-      tf::transformTFToEigen(tr, ttr);
-      for (std::size_t j = 0; j < it->second.size(); ++j)
-        cache[it->second[j].first] = ttr * it->first->getCollisionOriginTransforms()[it->second[j].second];
-    }
-    for (AttachedBodyShapeHandles::const_iterator it = attached_body_shape_handles_.begin();
-         it != attached_body_shape_handles_.end(); ++it)
-    {
-      tf::StampedTransform tr;
-      tf_->waitForTransform(target_frame, it->first->getAttachedLinkName(), target_time,
-                            shape_transform_cache_lookup_wait_time_);
-      tf_->lookupTransform(target_frame, it->first->getAttachedLinkName(), target_time, tr);
-      Eigen::Affine3d transform;
-      tf::transformTFToEigen(tr, transform);
-      for (std::size_t k = 0; k < it->second.size(); ++k)
-        cache[it->second[k].first] = transform * it->first->getFixedTransforms()[it->second[k].second];
-    }
-    {
-      tf::StampedTransform tr;
-      tf_->waitForTransform(target_frame, scene_->getPlanningFrame(), target_time,
-                            shape_transform_cache_lookup_wait_time_);
-      tf_->lookupTransform(target_frame, scene_->getPlanningFrame(), target_time, tr);
-      Eigen::Affine3d transform;
-      tf::transformTFToEigen(tr, transform);
-      for (CollisionBodyShapeHandles::const_iterator it = collision_body_shape_handles_.begin();
-           it != collision_body_shape_handles_.end(); ++it)
+      SWRI_PROFILE("withoutLock");
+      for (LinkShapeHandles::const_iterator it = link_shape_handles_.begin(); it != link_shape_handles_.end(); ++it)
+      {
+        SWRI_PROFILE("links");
+        tf::StampedTransform tr;
+        tf_->waitForTransform(target_frame, it->first->getName(), target_time, shape_transform_cache_lookup_wait_time_);
+        tf_->lookupTransform(target_frame, it->first->getName(), target_time, tr);
+        Eigen::Affine3d ttr;
+        tf::transformTFToEigen(tr, ttr);
+        for (std::size_t j = 0; j < it->second.size(); ++j)
+          cache[it->second[j].first] = ttr * it->first->getCollisionOriginTransforms()[it->second[j].second];
+      }
+      for (AttachedBodyShapeHandles::const_iterator it = attached_body_shape_handles_.begin();
+           it != attached_body_shape_handles_.end(); ++it)
+      {
+        SWRI_PROFILE("attached shapes");
+        tf::StampedTransform tr;
+        tf_->waitForTransform(target_frame, it->first->getAttachedLinkName(), target_time,
+                              shape_transform_cache_lookup_wait_time_);
+        tf_->lookupTransform(target_frame, it->first->getAttachedLinkName(), target_time, tr);
+        Eigen::Affine3d transform;
+        tf::transformTFToEigen(tr, transform);
         for (std::size_t k = 0; k < it->second.size(); ++k)
-          cache[it->second[k].first] = transform * (*it->second[k].second);
+          cache[it->second[k].first] = transform * it->first->getFixedTransforms()[it->second[k].second];
+      }
+      {
+        SWRI_PROFILE("other");
+        tf::StampedTransform tr;
+        tf_->waitForTransform(target_frame, scene_->getPlanningFrame(), target_time,
+                              shape_transform_cache_lookup_wait_time_);
+        tf_->lookupTransform(target_frame, scene_->getPlanningFrame(), target_time, tr);
+        Eigen::Affine3d transform;
+        tf::transformTFToEigen(tr, transform);
+        for (CollisionBodyShapeHandles::const_iterator it = collision_body_shape_handles_.begin();
+             it != collision_body_shape_handles_.end(); ++it){
+          for (std::size_t k = 0; k < it->second.size(); ++k) {
+            SWRI_PROFILE("transform");
+            cache[it->second[k].first] = transform * (*it->second[k].second);
+          }
+        }
+      }
     }
+
   }
   catch (tf::TransformException& ex)
   {
@@ -1033,9 +1059,7 @@ bool planning_scene_monitor::PlanningSceneMonitor::getShapeTransformCache(
   return true;
 }
 
-void planning_scene_monitor::PlanningSceneMonitor::startWorldGeometryMonitor(
-    const std::string& collision_objects_topic, const std::string& planning_scene_world_topic,
-    const bool load_octomap_monitor)
+void planning_scene_monitor::PlanningSceneMonitor::startWorldGeometryMonitor(const std::string &collision_objects_topic, const std::string &planning_scene_world_topic)
 {
   stopWorldGeometryMonitor();
   ROS_INFO_NAMED(LOGNAME, "Starting world geometry monitor");
@@ -1072,22 +1096,39 @@ void planning_scene_monitor::PlanningSceneMonitor::startWorldGeometryMonitor(
                    root_nh_.resolveName(planning_scene_world_topic).c_str());
   }
 
-  // Ocotomap monitor is optional
-  if (load_octomap_monitor)
-  {
-    if (!octomap_monitor_)
-    {
-      octomap_monitor_.reset(new occupancy_map_monitor::OccupancyMapMonitor(tf_, scene_->getPlanningFrame()));
-      excludeRobotLinksFromOctree();
-      excludeAttachedBodiesFromOctree();
-      excludeWorldObjectsFromOctree();
 
-      octomap_monitor_->setTransformCacheCallback(
-          boost::bind(&PlanningSceneMonitor::getShapeTransformCache, this, _1, _2, _3));
-      octomap_monitor_->setUpdateCallback(boost::bind(&PlanningSceneMonitor::octomapUpdateCallback, this));
+
+
+    std::string map_type;
+    nh_.param("map_type", map_type,std::string("none"));
+    if(!map_type.compare("octomap")){
+        if (!octomap_monitor_)
+        {
+            octomap_monitor_.reset(new occupancy_map_monitor::OccupancyMapMonitor<occupancy_map_monitor::OccMapTree>(tf_, scene_->getPlanningFrame()));
+            excludeRobotLinksFromOctree();
+            excludeAttachedBodiesFromOctree();
+            excludeWorldObjectsFromOctree();
+
+            octomap_monitor_->setTransformCacheCallback(
+                    boost::bind(&PlanningSceneMonitor::getShapeTransformCache, this, _1, _2, _3));
+            octomap_monitor_->setUpdateCallback(boost::bind(&PlanningSceneMonitor::octomapUpdateCallback, this));
+        }
+        octomap_monitor_->startMonitor();
+    }else if(!map_type.compare("esdf")){
+        if (!octomap_monitor_)
+        {
+            octomap_monitor_.reset(new occupancy_map_monitor::OccupancyMapMonitor<occupancy_map_monitor::EsdfMap>(tf_, scene_->getPlanningFrame()));
+            excludeRobotLinksFromOctree();
+            excludeAttachedBodiesFromOctree();
+            excludeWorldObjectsFromOctree();
+
+            octomap_monitor_->setTransformCacheCallback(
+                    boost::bind(&PlanningSceneMonitor::getShapeTransformCache, this, _1, _2, _3));
+            octomap_monitor_->setUpdateCallback(boost::bind(&PlanningSceneMonitor::esdfUpdateCallback, this));
+        }
+        octomap_monitor_->startMonitor();
     }
-    octomap_monitor_->startMonitor();
-  }
+
 }
 
 void planning_scene_monitor::PlanningSceneMonitor::stopWorldGeometryMonitor()
@@ -1210,6 +1251,9 @@ void planning_scene_monitor::PlanningSceneMonitor::stateUpdateTimerCallback(cons
   }
 }
 
+/**
+ * triggered after processing a pointcloud/ depth image...
+ */
 void planning_scene_monitor::PlanningSceneMonitor::octomapUpdateCallback()
 {
   if (!octomap_monitor_)
@@ -1217,22 +1261,59 @@ void planning_scene_monitor::PlanningSceneMonitor::octomapUpdateCallback()
 
   updateFrameTransforms();
   {
-    boost::unique_lock<boost::shared_mutex> ulock(scene_update_mutex_);
+    boost::unique_lock<boost::shared_mutex> ulock(scene_update_mutex_);ROS_ERROR("scene_update_mutex exclusive by: %d, updateFrameTransforms" , getpid());
     last_update_time_ = ros::Time::now();
     octomap_monitor_->getOcTreePtr()->lockRead();
     try
     {
-      scene_->processOctomapPtr(octomap_monitor_->getOcTreePtr(), Eigen::Affine3d::Identity());
+      scene_->processOctomapPtr(std::dynamic_pointer_cast<occupancy_map_monitor::OccMapTree, collision_detection::MoveitMap>(octomap_monitor_->getOcTreePtr()), Eigen::Affine3d::Identity());
       octomap_monitor_->getOcTreePtr()->unlockRead();
     }
     catch (...)
     {
       octomap_monitor_->getOcTreePtr()->unlockRead();  // unlock and rethrow
-      throw;
+      ROS_ERROR("scene could not process octomap, probably because octomap_monitor_ is now esdf :)");
+      //throw;
     }
   }
   triggerSceneUpdateEvent(UPDATE_GEOMETRY);
 }
+
+
+/**
+ * triggered after processing a pointcloud
+ */
+void planning_scene_monitor::PlanningSceneMonitor::esdfUpdateCallback()
+{
+
+  if (!octomap_monitor_)
+    return;
+  {
+    SWRI_PROFILE("updateFrameTransforms");
+    updateFrameTransforms();
+  }
+  {
+    //boost::unique_lock<boost::shared_mutex> ulock(scene_update_mutex_);ROS_ERROR("scene_update_mutex exclusive by: %d, updateFrameTransforms" , getpid());
+    last_update_time_ = ros::Time::now();
+    octomap_monitor_->getOcTreePtr()->lockRead();
+    try
+    {
+      SWRI_PROFILE("scene_processMapPtr");
+      scene_->processMapPtr(octomap_monitor_->getOcTreePtr(), Eigen::Affine3d::Identity());
+      octomap_monitor_->getOcTreePtr()->unlockRead();
+    }
+    catch (...)
+    {
+      octomap_monitor_->getOcTreePtr()->unlockRead();  // unlock
+      throw;
+    }
+  }
+  {
+    SWRI_PROFILE("triggerSceneUpdateEvent");
+    triggerSceneUpdateEvent(UPDATE_GEOMETRY);
+  }
+}
+
 
 void planning_scene_monitor::PlanningSceneMonitor::setStateUpdateFrequency(double hz)
 {
@@ -1273,7 +1354,7 @@ void planning_scene_monitor::PlanningSceneMonitor::updateSceneWithCurrentState()
     }
 
     {
-      boost::unique_lock<boost::shared_mutex> ulock(scene_update_mutex_);
+      boost::unique_lock<boost::shared_mutex> ulock(scene_update_mutex_);ROS_ERROR("scene_update_mutex exclusive by: %d, updateFrameTransforms" , getpid());
       last_update_time_ = last_robot_motion_time_ = current_state_monitor_->getCurrentStateTime();
       ROS_DEBUG_STREAM_NAMED(LOGNAME, "robot state update " << fmod(last_robot_motion_time_.toSec(), 10.));
       current_state_monitor_->setToCurrentState(scene_->getCurrentStateNonConst());
@@ -1368,13 +1449,26 @@ void planning_scene_monitor::PlanningSceneMonitor::updateFrameTransforms()
   if (scene_)
   {
     std::vector<geometry_msgs::TransformStamped> transforms;
-    getUpdatedFrameTransforms(transforms);
-    {
-      boost::unique_lock<boost::shared_mutex> ulock(scene_update_mutex_);
-      scene_->getTransformsNonConst().setTransforms(transforms);
-      last_update_time_ = ros::Time::now();
+    {     SWRI_PROFILE("getUpdatedFrameTransforms");
+      getUpdatedFrameTransforms(transforms);
     }
-    triggerSceneUpdateEvent(UPDATE_TRANSFORMS);
+    {
+      SWRI_PROFILE("setTransforms");
+
+      boost::unique_lock<boost::shared_mutex> ulock(scene_update_mutex_);ROS_ERROR("scene_update_mutex exclusive by: %d, updateFrameTransforms" , getpid());
+      {
+
+        SWRI_PROFILE("setTransforms for real");
+        scene_->getTransformsNonConst().setTransforms(transforms);
+        last_update_time_ = ros::Time::now();
+      }
+
+
+    }
+    {
+      SWRI_PROFILE("triggerSceneUpdateEvent");
+      triggerSceneUpdateEvent(UPDATE_TRANSFORMS);
+    }
   }
 }
 

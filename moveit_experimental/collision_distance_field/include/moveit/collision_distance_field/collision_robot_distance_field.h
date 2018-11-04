@@ -43,6 +43,7 @@
 #include <moveit/collision_distance_field/collision_common_distance_field.h>
 #include <moveit/planning_scene/planning_scene.h>
 #include <boost/thread/mutex.hpp>
+#include <std_srvs/Empty.h>
 
 namespace collision_detection
 {
@@ -60,6 +61,7 @@ class CollisionRobotDistanceField : public CollisionRobot
 {
   friend class CollisionWorldDistanceField;
 
+  friend class MyCollisionWorld;
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -68,6 +70,11 @@ public:
   CollisionRobotDistanceField(const CollisionRobot& col_robot, const Eigen::Vector3d& size,
                               const Eigen::Vector3d& origin, bool use_signed_distance_field, double resolution,
                               double collision_tolerance, double max_propogation_distance, double padding);
+
+  CollisionRobotDistanceField(const robot_model::RobotModelConstPtr& kmodel,double padding,
+                              double scale,
+                              double resolution = DEFAULT_RESOLUTION,
+                              double max_propogation_distance = DEFAULT_MAX_PROPOGATION_DISTANCE);
 
   CollisionRobotDistanceField(const robot_model::RobotModelConstPtr& kmodel,
                               const std::map<std::string, std::vector<CollisionSphere>>& link_body_decompositions,
@@ -80,6 +87,7 @@ public:
                               double scale = 1.0);
 
   CollisionRobotDistanceField(const CollisionRobotDistanceField& other);
+  virtual  ~CollisionRobotDistanceField();
 
   void initialize(const std::map<std::string, std::vector<CollisionSphere>>& link_body_decompositions,
                   const Eigen::Vector3d& size, const Eigen::Vector3d& origin, bool use_signed_distance_field,
@@ -256,6 +264,8 @@ protected:
   double collision_tolerance_;
   double max_propogation_distance_;
 
+  std::string largest_group_name;
+
   std::vector<BodyDecompositionConstPtr> link_body_decomposition_vector_;
   std::map<std::string, unsigned int> link_body_decomposition_index_map_;
 
@@ -265,6 +275,18 @@ protected:
   std::map<std::string, GroupStateRepresentationPtr> pregenerated_group_state_representation_map_;
 
   planning_scene::PlanningScenePtr planning_scene_;
+  ros::Publisher marker_pub;
+
+  bool show(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
+
+  ros::ServiceServer service_server;
+
+    bool showState(const moveit::core::RobotState &state) const;
+
+protected:
+    virtual void onCheckSelfCollision(const collision_detection::CollisionRequest& req,
+                         collision_detection::CollisionResult& res,
+                         const GroupStateRepresentationPtr& gsr, const moveit::core::RobotState& state)const{} ///can be used to postprocess collisionchecks
 };
 }
 

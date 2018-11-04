@@ -40,7 +40,7 @@
 #include <moveit/collision_detection_fcl/collision_common.h>
 
 namespace collision_detection
-{
+{ MOVEIT_CLASS_FORWARD(CollisionRobotFCL);
 class CollisionRobotFCL : public CollisionRobot
 {
   friend class CollisionWorldFCL;

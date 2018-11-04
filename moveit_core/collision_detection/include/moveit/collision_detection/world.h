@@ -46,6 +46,8 @@
 #include <boost/function.hpp>
 #include <Eigen/Geometry>
 #include <eigen_stl_containers/eigen_stl_vector_container.h>
+#include <moveit/collision_detection/moveit_map.h>
+
 
 namespace shapes
 {
@@ -67,6 +69,7 @@ public:
    * \e other should not be changed while the copy constructor is running
    * This does copy on write and should be quick. */
   World(const World& other);
+  World& operator=(const World& other);
 
   ~World();
 
@@ -244,6 +247,11 @@ public:
    * Used which switching from one world to another. */
   void notifyObserverAllObjects(const ObserverHandle observer_handle, Action action) const;
 
+  void setMapPtr(const MoveitMapPtr& map);
+  MoveitMapConstPtr getMapPtr() const;
+  MoveitMapPtr getMapPtr();
+  void setMapPose(const Eigen::Affine3d& t);
+  Eigen::Affine3d getWorldPose();
 private:
   /** notify all observers of a change */
   void notify(const ObjectConstPtr&, Action);
@@ -262,6 +270,9 @@ private:
 
   /** The objects maintained in the world */
   std::map<std::string, ObjectPtr> objects_;
+  MoveitMapPtr map_;
+
+  Eigen::Affine3d map_pose_;
 
   /* observers to call when something changes */
   class Observer

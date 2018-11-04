@@ -27,6 +27,11 @@ catkin_package(
     moveit_core
     moveit_ros_planning
 )
+### FOR PROFILING (need to set after catkin_package)
+add_compile_options(-pg)
+set(catkin_LIBRARIES ${catkin_LIBRARIES} -pg)
+###
+
 
 include_directories(include)
 include_directories(${catkin_INCLUDE_DIRS}

@@ -174,12 +174,12 @@ public:
                         GroupStateRepresentationPtr& gsr) const;
 
 protected:
-  DistanceFieldCacheEntryPtr generateDistanceFieldCacheEntry();
+  virtual DistanceFieldCacheEntryPtr generateDistanceFieldCacheEntry();
 
   void updateDistanceObject(const std::string& id, CollisionWorldDistanceField::DistanceFieldCacheEntryPtr& dfce,
                             EigenSTL::vector_Vector3d& add_points, EigenSTL::vector_Vector3d& subtract_points);
 
-  bool getEnvironmentCollisions(const CollisionRequest& req, CollisionResult& res,
+  virtual bool getEnvironmentCollisions(const CollisionRequest& req, CollisionResult& res,
                                 const distance_field::DistanceFieldConstPtr& env_distance_field,
                                 GroupStateRepresentationPtr& gsr) const;
 
@@ -195,9 +195,9 @@ protected:
   double collision_tolerance_;
   double max_propogation_distance_;
 
-  mutable boost::mutex update_cache_lock_;
+  mutable boost::mutex update_cache_lock_; // is not used at all...
   DistanceFieldCacheEntryPtr distance_field_cache_entry_;
-  GroupStateRepresentationPtr last_gsr_;
+  mutable GroupStateRepresentationPtr last_gsr_;
   World::ObserverHandle observer_handle_;
 };
 }

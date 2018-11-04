@@ -37,48 +37,34 @@
 #include <moveit/occupancy_map_monitor/occupancy_map_monitor.h>
 #include <moveit/occupancy_map_monitor/occupancy_map_updater.h>
 
+
 namespace occupancy_map_monitor
 {
-OccupancyMapUpdater::OccupancyMapUpdater(const std::string& type) : type_(type)
-{
-}
 
-OccupancyMapUpdater::~OccupancyMapUpdater()
-{
-}
-
-void OccupancyMapUpdater::setMonitor(OccupancyMapMonitor* monitor)
-{
-  monitor_ = monitor;
-  tree_ = monitor->getOcTreePtr();
-}
-
-void OccupancyMapUpdater::readXmlParam(XmlRpc::XmlRpcValue& params, const std::string& param_name, double* value)
-{
-  if (params.hasMember(param_name))
+  void MapUpdater::readXmlParam(XmlRpc::XmlRpcValue& params, const std::string& param_name, double* value)
   {
-    if (params[param_name].getType() == XmlRpc::XmlRpcValue::TypeInt)
+    if (params.hasMember(param_name))
+    {
+      if (params[param_name].getType() == XmlRpc::XmlRpcValue::TypeInt)
+        *value = (int)params[param_name];
+      else
+        *value = (double)params[param_name];
+    }
+  }
+  void MapUpdater::readXmlParam(XmlRpc::XmlRpcValue &params, const std::string &param_name, bool *value) {
+    if (params.hasMember(param_name))
+    {
+      if (params[param_name].getType() == XmlRpc::XmlRpcValue::TypeBoolean)
+        *value = (bool)params[param_name];
+    }
+  }
+
+
+
+  void MapUpdater::readXmlParam(XmlRpc::XmlRpcValue& params, const std::string& param_name, unsigned int* value)
+  {
+    if (params.hasMember(param_name))
       *value = (int)params[param_name];
-    else
-      *value = (double)params[param_name];
   }
-}
 
-void OccupancyMapUpdater::readXmlParam(XmlRpc::XmlRpcValue& params, const std::string& param_name, unsigned int* value)
-{
-  if (params.hasMember(param_name))
-    *value = (int)params[param_name];
-}
-
-bool OccupancyMapUpdater::updateTransformCache(const std::string& target_frame, const ros::Time& target_time)
-{
-  transform_cache_.clear();
-  if (transform_provider_callback_)
-    return transform_provider_callback_(target_frame, target_time, transform_cache_);
-  else
-  {
-    ROS_WARN_THROTTLE(1, "No callback provided for updating the transform cache for octomap updaters");
-    return false;
-  }
-}
 }

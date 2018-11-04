@@ -189,6 +189,14 @@ int main(int argc, char** argv)
 
   ros::AsyncSpinner spinner(1);
   spinner.start();
+  ROS_INFO("ros info test");
+  ros::NodeHandle nh;
+  
+  if(nh.param("wait_at_start", false)){
+    //some time to connect to move group
+    ros::Duration wait(20);
+    wait.sleep();
+  }
 
   boost::shared_ptr<tf::TransformListener> tf(new tf::TransformListener(ros::Duration(10.0)));
 

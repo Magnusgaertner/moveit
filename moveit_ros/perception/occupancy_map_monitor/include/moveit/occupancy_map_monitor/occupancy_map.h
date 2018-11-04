@@ -41,79 +41,47 @@
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/function.hpp>
 #include <memory>
-
+#include <moveit/collision_detection/moveit_map.h>
+#include <octomap_msgs/conversions.h>
 namespace occupancy_map_monitor
 {
 typedef octomap::OcTreeNode OccMapNode;
 
-class OccMapTree : public octomap::OcTree
-{
+class OccMapTree : public octomap::OcTree, public collision_detection::MoveitMap {
 public:
-  OccMapTree(double resolution) : octomap::OcTree(resolution)
-  {
+
+  OccMapTree(double resolution) : octomap::OcTree(resolution) {}
+
+  OccMapTree(const std::string& filename) : octomap::OcTree(filename) {}
+
+  virtual ~OccMapTree() = default;
+
+  inline virtual bool writeBinary(const std::string& filename) override{
+    octomap::OcTree::writeBinary(filename);
+  }
+  inline virtual bool readBinary(const std::string& filename) override{
+    octomap::OcTree::readBinary(filename);
   }
 
-  OccMapTree(const std::string& filename) : octomap::OcTree(filename)
-  {
+  inline virtual void clear() override {
+    octomap::OcTree::clear();
+  }
+  inline static std::string name(){
+    return "occupancy_map_monitor::OccMapTree";
   }
 
-  /** @brief lock the underlying octree. it will not be read or written by the
-   *  monitor until unlockTree() is called */
-  void lockRead()
-  {
-    tree_mutex_.lock_shared();
+  //this is the obvious case
+  virtual void getOctreeMessage(octomap_msgs::Octomap* msg)const override{
+    octomap_msgs::fullMapToMsg(*this, *msg);
   }
 
-  /** @brief unlock the underlying octree. */
-  void unlockRead()
-  {
-    tree_mutex_.unlock_shared();
-  }
-
-  /** @brief lock the underlying octree. it will not be read or written by the
-   *  monitor until unlockTree() is called */
-  void lockWrite()
-  {
-    tree_mutex_.lock();
-  }
-
-  /** @brief unlock the underlying octree. */
-  void unlockWrite()
-  {
-    tree_mutex_.unlock();
-  }
-
-  typedef boost::shared_lock<boost::shared_mutex> ReadLock;
-  typedef boost::unique_lock<boost::shared_mutex> WriteLock;
-
-  ReadLock reading()
-  {
-    return ReadLock(tree_mutex_);
-  }
-
-  WriteLock writing()
-  {
-    return WriteLock(tree_mutex_);
-  }
-
-  void triggerUpdateCallback(void)
-  {
-    if (update_callback_)
-      update_callback_();
-  }
-
-  /** @brief Set the callback to trigger when updates are received */
-  void setUpdateCallback(const boost::function<void()>& update_callback)
-  {
-    update_callback_ = update_callback;
-  }
-
+ /* inline virtual void updateScene(const std::shared_ptr<const collision_detection::MoveitMap>& me, planning_scene::PlanningScenePtr& scene, const Eigen::Affine3d& t) override{
+    scene->processOctomapPtr(std::dynamic_pointer_cast(me), t);
+  }*/
 private:
-  boost::shared_mutex tree_mutex_;
-  boost::function<void()> update_callback_;
 };
 
-typedef std::shared_ptr<OccMapTree> OccMapTreePtr;
+  typedef std::shared_ptr<OccMapTree> OccMapTreePtr;
 typedef std::shared_ptr<const OccMapTree> OccMapTreeConstPtr;
 }
 

@@ -23,6 +23,7 @@ COMPONENTS
   rostime
   rosconsole
   pluginlib
+  swri_profiler
 )
 find_package(Eigen3 REQUIRED)
 

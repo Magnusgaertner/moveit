@@ -736,6 +736,7 @@ public:
   void processOctomapMsg(const octomap_msgs::OctomapWithPose& map);
   void processOctomapMsg(const octomap_msgs::Octomap& map);
   void processOctomapPtr(const std::shared_ptr<const octomap::OcTree>& octree, const Eigen::Affine3d& t);
+  void processMapPtr(const std::shared_ptr<collision_detection::MoveitMap>& map, const Eigen::Affine3d& t);
 
   /**
    * \brief Clear all collision objects in planning scene

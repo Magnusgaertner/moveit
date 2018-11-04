@@ -45,17 +45,24 @@
 
 #include <moveit_msgs/SaveMap.h>
 #include <moveit_msgs/LoadMap.h>
-#include <moveit/occupancy_map_monitor/occupancy_map.h>
+#include <moveit/occupancy_map_monitor/map_monitor.h>
+
 #include <moveit/occupancy_map_monitor/occupancy_map_updater.h>
 
 #include <boost/thread/mutex.hpp>
-
 #include <memory>
 
 namespace occupancy_map_monitor
 {
-class OccupancyMapMonitor
+
+  template <typename MapType>
+class OccupancyMapMonitor:public MapMonitor
 {
+  using MapTypeConstPtr = std::shared_ptr<const MapType>;
+  using MapTypePtr = std::shared_ptr<MapType>;
+  using OccupancyMapUpdaterPtr = std::shared_ptr<OccupancyMapUpdater<MapType> >;
+  using OccupancyMapUpdaterConstPtr = std::shared_ptr<const OccupancyMapUpdater<MapType> >;
+
 public:
   OccupancyMapMonitor(const boost::shared_ptr<tf::Transformer>& tf, const std::string& map_frame = "",
                       double map_resolution = 0.0);
@@ -65,86 +72,100 @@ public:
 
   ~OccupancyMapMonitor();
 
-  /** @brief start the monitor (will begin updating the octomap */
-  void startMonitor();
+  /** @brief start the monitor (will begin updating the map */
+  virtual void startMonitor() override ;
 
-  void stopMonitor();
+  virtual void stopMonitor() override ;
 
-  /** @brief Get a pointer to the underlying octree for this monitor. Lock the tree before reading or writing using this
+  /** @brief Get a pointer to the underlying map for this monitor. Lock the map before reading or writing using this
    *  pointer. The value of this pointer stays the same throughout the existance of the monitor instance. */
-  const OccMapTreePtr& getOcTreePtr()
+  //as this is part of a public interface the function is not renamed to i.e getMapPtr()
+  virtual const collision_detection::MoveitMapPtr& getOcTreePtr() override
   {
-    return tree_;
+    return base_map_;
   }
 
-  /** @brief Get a const pointer to the underlying octree for this monitor. Lock the
-   *  tree before reading this pointer */
-  const OccMapTreeConstPtr& getOcTreePtr() const
+
+  /** @brief Get a const pointer to the underlying map for this monitor. Lock the
+   *  map before reading this pointer */
+  //as this is part of a public interface the function is not renamed to i.e getMapPtr()
+  virtual const collision_detection::MoveitMapConstPtr& getOcTreePtr() const override
   {
-    return tree_const_;
+    return base_map_const_;
   }
 
-  const std::string& getMapFrame() const
+  const MapTypePtr getMapPtr(){
+    return map_;
+  }
+
+  const MapTypeConstPtr getMapPtr() const{
+    return map_const_;
+  }
+
+
+  virtual const std::string& getMapFrame() const override
   {
     return map_frame_;
   }
 
-  void setMapFrame(const std::string& frame);
+  virtual void setMapFrame(const std::string& frame) override;
 
-  double getMapResolution() const
+  virtual double getMapResolution() const override
   {
     return map_resolution_;
   }
 
-  const boost::shared_ptr<tf::Transformer>& getTFClient() const
+  virtual const boost::shared_ptr<tf::Transformer>& getTFClient() const override
   {
     return tf_;
   }
 
-  void addUpdater(const OccupancyMapUpdaterPtr& updater);
+  virtual void addUpdater(const MapUpdaterPtr& updater) override;
 
-  /** \brief Add this shape to the set of shapes to be filtered out from the octomap */
-  ShapeHandle excludeShape(const shapes::ShapeConstPtr& shape);
+  /** \brief Add this shape to the set of shapes to be filtered out from the map */
+  virtual ShapeHandle excludeShape(const shapes::ShapeConstPtr& shape) override;
 
   /** \brief Forget about this shape handle and the shapes it corresponds to */
-  void forgetShape(ShapeHandle handle);
+  virtual void forgetShape(ShapeHandle handle) override;
 
-  /** @brief Set the callback to trigger when updates to the maintained octomap are received */
-  void setUpdateCallback(const boost::function<void()>& update_callback)
+  /** @brief Set the callback to trigger when updates to the maintained map are received */
+  virtual void setUpdateCallback(const boost::function<void()>& update_callback) override
   {
-    tree_->setUpdateCallback(update_callback);
+    map_->setUpdateCallback(update_callback);
   }
 
-  void setTransformCacheCallback(const TransformCacheProvider& transform_cache_callback);
+  virtual void setTransformCacheCallback(const TransformCacheProvider& transform_cache_callback) override;
 
-  void publishDebugInformation(bool flag);
+  virtual void publishDebugInformation(bool flag) override;
 
-  bool isActive() const
+  virtual bool isActive() const override
   {
     return active_;
   }
 
 private:
-  void initialize();
+  virtual void initialize() override;
 
-  /** @brief Save the current octree to a binary file */
-  bool saveMapCallback(moveit_msgs::SaveMap::Request& request, moveit_msgs::SaveMap::Response& response);
+  /** @brief Save the current map to a binary file */
+  virtual bool saveMapCallback(moveit_msgs::SaveMap::Request& request, moveit_msgs::SaveMap::Response& response) override;
 
-  /** @brief Load octree from a binary file (gets rid of current octree data) */
-  bool loadMapCallback(moveit_msgs::LoadMap::Request& request, moveit_msgs::LoadMap::Response& response);
+  /** @brief Load map from a binary file (gets rid of current map data) */
+  virtual bool loadMapCallback(moveit_msgs::LoadMap::Request& request, moveit_msgs::LoadMap::Response& response) override;
 
-  bool getShapeTransformCache(std::size_t index, const std::string& target_frame, const ros::Time& target_time,
-                              ShapeTransformCache& cache) const;
+  virtual bool getShapeTransformCache(std::size_t index, const std::string& target_frame, const ros::Time& target_time,
+                              ShapeTransformCache& cache) const override ;
 
   boost::shared_ptr<tf::Transformer> tf_;
   std::string map_frame_;
   double map_resolution_;
   boost::mutex parameters_lock_;
 
-  OccMapTreePtr tree_;
-  OccMapTreeConstPtr tree_const_;
-
-  std::unique_ptr<pluginlib::ClassLoader<OccupancyMapUpdater> > updater_plugin_loader_;
+  MapTypePtr map_;
+  MapTypeConstPtr map_const_;
+  collision_detection::MoveitMapPtr base_map_;
+  collision_detection::MoveitMapConstPtr base_map_const_;
+  
+  std::unique_ptr<pluginlib::ClassLoader<OccupancyMapUpdater<MapType> > > updater_plugin_loader_;
   std::vector<OccupancyMapUpdaterPtr> map_updaters_;
   std::vector<std::map<ShapeHandle, ShapeHandle> > mesh_handles_;
   TransformCacheProvider transform_cache_callback_;
@@ -160,5 +181,7 @@ private:
   bool active_;
 };
 }
+
+#include <moveit/occupancy_map_monitor/occupancy_map_monitor.tpp>
 
 #endif

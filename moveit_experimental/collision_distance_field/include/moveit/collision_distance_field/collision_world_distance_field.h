@@ -72,6 +72,7 @@ public:
       double collision_tolerance = DEFAULT_COLLISION_TOLERANCE,
       double max_propogation_distance = DEFAULT_MAX_PROPOGATION_DISTANCE);
 
+
   CollisionWorldDistanceField(const CollisionWorldDistanceField& other, const WorldPtr& world);
 
   virtual ~CollisionWorldDistanceField();
@@ -174,6 +175,22 @@ public:
                         GroupStateRepresentationPtr& gsr) const;
 
 protected:
+
+    //constructors to construct distance field without generating cache entry
+  CollisionWorldDistanceField(bool generate_cache_entry, Eigen::Vector3d size = Eigen::Vector3d(DEFAULT_SIZE_X, DEFAULT_SIZE_Y, DEFAULT_SIZE_Z),
+                              Eigen::Vector3d origin = Eigen::Vector3d(0, 0, 0),
+                              bool use_signed_distance_field = DEFAULT_USE_SIGNED_DISTANCE_FIELD,
+                              double resolution = DEFAULT_RESOLUTION,
+                              double collision_tolerance = DEFAULT_COLLISION_TOLERANCE,
+                              double max_propogation_distance = DEFAULT_MAX_PROPOGATION_DISTANCE);
+
+  explicit CollisionWorldDistanceField(
+          const WorldPtr& world,bool generate_cache_entry,  Eigen::Vector3d size = Eigen::Vector3d(DEFAULT_SIZE_X, DEFAULT_SIZE_Y, DEFAULT_SIZE_Z),
+          Eigen::Vector3d origin = Eigen::Vector3d(0, 0, 0),
+          bool use_signed_distance_field = DEFAULT_USE_SIGNED_DISTANCE_FIELD, double resolution = DEFAULT_RESOLUTION,
+          double collision_tolerance = DEFAULT_COLLISION_TOLERANCE,
+          double max_propogation_distance = DEFAULT_MAX_PROPOGATION_DISTANCE);
+
   virtual DistanceFieldCacheEntryPtr generateDistanceFieldCacheEntry();
 
   void updateDistanceObject(const std::string& id, CollisionWorldDistanceField::DistanceFieldCacheEntryPtr& dfce,
@@ -183,7 +200,7 @@ protected:
                                 const distance_field::DistanceFieldConstPtr& env_distance_field,
                                 GroupStateRepresentationPtr& gsr) const;
 
-  bool getEnvironmentProximityGradients(const distance_field::DistanceFieldConstPtr& env_distance_field,
+  virtual bool getEnvironmentProximityGradients(const distance_field::DistanceFieldConstPtr& env_distance_field,
                                         GroupStateRepresentationPtr& gsr) const;
 
   static void notifyObjectChange(CollisionWorldDistanceField* self, const ObjectConstPtr& obj, World::Action action);

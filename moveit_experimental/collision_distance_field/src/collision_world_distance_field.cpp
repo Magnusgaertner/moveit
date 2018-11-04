@@ -49,7 +49,7 @@ CollisionWorldDistanceField::~CollisionWorldDistanceField()
   getWorld()->removeObserver(observer_handle_);
 }
 
-CollisionWorldDistanceField::CollisionWorldDistanceField(Eigen::Vector3d size, Eigen::Vector3d origin,
+CollisionWorldDistanceField::CollisionWorldDistanceField(bool construct_dfce, Eigen::Vector3d size, Eigen::Vector3d origin,
                                                          bool use_signed_distance_field, double resolution,
                                                          double collision_tolerance, double max_propogation_distance)
   : CollisionWorld()
@@ -61,14 +61,27 @@ CollisionWorldDistanceField::CollisionWorldDistanceField(Eigen::Vector3d size, E
   , max_propogation_distance_(max_propogation_distance)
 {
   SWRI_PROFILE("CollisionWorldDistanceField1");
-  distance_field_cache_entry_ = generateDistanceFieldCacheEntry();
+  distance_field_cache_entry_.reset();
+  if(construct_dfce)
+    distance_field_cache_entry_ = generateDistanceFieldCacheEntry();
 
   // request notifications about changes to world
   observer_handle_ =
       getWorld()->addObserver(boost::bind(&CollisionWorldDistanceField::notifyObjectChange, this, _1, _2));
 }
 
-CollisionWorldDistanceField::CollisionWorldDistanceField(const WorldPtr& world, Eigen::Vector3d size,
+CollisionWorldDistanceField::CollisionWorldDistanceField(Eigen::Vector3d size, Eigen::Vector3d origin,
+                                                         bool use_signed_distance_field, double resolution,
+                                                         double collision_tolerance, double max_propogation_distance):
+        CollisionWorldDistanceField(true,
+                                    size,
+                                    origin,
+                                    use_signed_distance_field,
+                                    resolution,
+                                    collision_tolerance,
+                                    max_propogation_distance){}
+
+CollisionWorldDistanceField::CollisionWorldDistanceField(const WorldPtr& world, bool construct_dfce, Eigen::Vector3d size,
                                                          Eigen::Vector3d origin, bool use_signed_distance_field,
                                                          double resolution, double collision_tolerance,
                                                          double max_propogation_distance)
@@ -81,13 +94,27 @@ CollisionWorldDistanceField::CollisionWorldDistanceField(const WorldPtr& world, 
   , max_propogation_distance_(max_propogation_distance)
 {
   SWRI_PROFILE("CollisionWorldDistanceField2");
-  distance_field_cache_entry_ = generateDistanceFieldCacheEntry();
+  distance_field_cache_entry_.reset();
+  if(construct_dfce)
+    distance_field_cache_entry_ = generateDistanceFieldCacheEntry();
 
   // request notifications about changes to world
   observer_handle_ =
       getWorld()->addObserver(boost::bind(&CollisionWorldDistanceField::notifyObjectChange, this, _1, _2));
   getWorld()->notifyObserverAllObjects(observer_handle_, World::CREATE);
 }
+
+CollisionWorldDistanceField::CollisionWorldDistanceField(const WorldPtr& world, Eigen::Vector3d size,
+                                                             Eigen::Vector3d origin, bool use_signed_distance_field,
+                                                             double resolution, double collision_tolerance,
+                                                             double max_propogation_distance):
+        CollisionWorldDistanceField(world,
+                                    true,
+                                    size,
+                                    origin,
+                                    use_signed_distance_field,
+                                    resolution,collision_tolerance,
+                                    max_propogation_distance){}
 
 CollisionWorldDistanceField::CollisionWorldDistanceField(const CollisionWorldDistanceField& other,
                                                          const WorldPtr& world)

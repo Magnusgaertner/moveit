@@ -50,10 +50,10 @@ namespace collision_detection
 static const double DEFAULT_SIZE_X = 3.0;
 static const double DEFAULT_SIZE_Y = 3.0;
 static const double DEFAULT_SIZE_Z = 4.0;
-static const bool DEFAULT_USE_SIGNED_DISTANCE_FIELD = false;
-static const double DEFAULT_RESOLUTION = .02;
+static const bool DEFAULT_USE_SIGNED_DISTANCE_FIELD = true;
+static const double DEFAULT_RESOLUTION = .2;
 static const double DEFAULT_COLLISION_TOLERANCE = 0.0;
-static const double DEFAULT_MAX_PROPOGATION_DISTANCE = .25;
+static const double DEFAULT_MAX_PROPOGATION_DISTANCE = 1.5;
 
 MOVEIT_CLASS_FORWARD(CollisionRobotDistanceField);
 

@@ -40,6 +40,7 @@
 #include <moveit/distance_field/find_internal_points.h>
 #include <ros/console.h>
 #include <memory>
+#include <swri_profiler/profiler.h>
 
 const static double RESOLUTION_SCALE = 1.0;
 const static double EPSILON = 0.0001;
@@ -53,7 +54,7 @@ collision_detection::determineCollisionSpheres(const bodies::Body* body, Eigen::
   body->computeBoundingCylinder(cyl);
   unsigned int num_points = ceil(cyl.length / (cyl.radius / 2.0));
   double spacing = cyl.length / ((num_points * 1.0) - 1.0);
-  relative_transform = body->getPose().inverse(Eigen::Isometry) * cyl.pose;
+  relative_transform = cyl.pose;
 
   for (unsigned int i = 1; i < num_points - 1; i++)
   {
@@ -197,17 +198,8 @@ bool collision_detection::getCollisionSphereCollision(const distance_field::Dist
 {
   for (unsigned int i = 0; i < sphere_list.size(); i++)
   {
-    Eigen::Vector3d p = sphere_centers[i];
-    Eigen::Vector3d grad;
-    bool in_bounds = true;
-    double dist = distance_field->getDistanceGradient(p.x(), p.y(), p.z(), grad.x(), grad.y(), grad.z(), in_bounds);
-
-    if (!in_bounds && grad.norm() > 0)
-    {
-      ROS_DEBUG("Collision sphere point is out of bounds");
-      return true;
-    }
-
+    const Eigen::Vector3d& p = sphere_centers[i];
+    double dist = distance_field->getDistance(p.x(), p.y(), p.z());
     if ((maximum_value > dist) && (sphere_list[i].radius_ - dist > tolerance))
     {
       return true;
@@ -229,13 +221,8 @@ bool collision_detection::getCollisionSphereCollision(const distance_field::Dist
     Eigen::Vector3d p = sphere_centers[i];
     Eigen::Vector3d grad;
     bool in_bounds = true;
-    double dist = distance_field->getDistanceGradient(p.x(), p.y(), p.z(), grad.x(), grad.y(), grad.z(), in_bounds);
-    if (!in_bounds && (grad.norm() > 0))
-    {
-      ROS_DEBUG("Collision sphere point is out of bounds");
-      return true;
-    }
-    if (maximum_value > dist && (sphere_list[i].radius_ - dist > tolerance))
+    double dist = distance_field->getDistance(p.x(), p.y(), p.z());
+    if ((maximum_value > dist) && (sphere_list[i].radius_ - dist > tolerance))
     {
       if (num_coll == 0)
       {
@@ -297,9 +284,12 @@ void collision_detection::BodyDecomposition::init(const std::vector<shapes::Shap
     body_spheres = determineCollisionSpheres(bodies_.getBody(i), relative_cylinder_pose_);
     collision_spheres_.insert(collision_spheres_.end(), body_spheres.begin(), body_spheres.end());
 
+    //TODO can this be used again?
+    /*
     distance_field::findInternalPointsConvex(*bodies_.getBody(i), resolution, body_collision_points);
+    ROS_INFO("inserting %d body collision points, resulution is %f", body_collision_points.size(), resolution);
     relative_collision_points_.insert(relative_collision_points_.end(), body_collision_points.begin(),
-                                      body_collision_points.end());
+                                      body_collision_points.end());*/
   }
 
   sphere_radii_.resize(collision_spheres_.size());

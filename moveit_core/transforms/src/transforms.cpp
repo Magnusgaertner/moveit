@@ -38,7 +38,7 @@
 #include <eigen_conversions/eigen_msg.h>
 #include <boost/algorithm/string/trim.hpp>
 #include <ros/console.h>
-
+#include <swri_profiler/profiler.h>
 namespace moveit
 {
 namespace core
@@ -159,7 +159,11 @@ void Transforms::setTransform(const geometry_msgs::TransformStamped& transform)
 void Transforms::setTransforms(const std::vector<geometry_msgs::TransformStamped>& transforms)
 {
   for (std::size_t i = 0; i < transforms.size(); ++i)
+  {
+    SWRI_PROFILE("setTransform");
     setTransform(transforms[i]);
+  }
+
 }
 
 void Transforms::copyTransforms(std::vector<geometry_msgs::TransformStamped>& transforms) const

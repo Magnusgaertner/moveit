@@ -109,6 +109,7 @@ bool CollisionPluginLoader::activate(const std::string& name, const planning_sce
 
 void CollisionPluginLoader::setupScene(ros::NodeHandle& nh, const planning_scene::PlanningScenePtr& scene)
 {
+  ROS_INFO("setupScene called");
   if (!scene)
     return;
 

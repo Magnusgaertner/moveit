@@ -42,7 +42,7 @@
 #include <moveit/collision_detection/collision_common.h>
 #include <moveit/collision_detection/collision_world.h>
 #include <moveit/collision_distance_field/collision_distance_field_types.h>
-
+#include <swri_profiler/profiler.h>
 namespace collision_detection
 {
 MOVEIT_CLASS_FORWARD(GroupStateRepresentation);
@@ -61,6 +61,7 @@ struct GroupStateRepresentation
   GroupStateRepresentation(){};
   GroupStateRepresentation(const GroupStateRepresentation& gsr)
   {
+    SWRI_PROFILE("construct gsr from pregenerated_ gsr");
     link_body_decompositions_.resize(gsr.link_body_decompositions_.size());
     for (unsigned int i = 0; i < gsr.link_body_decompositions_.size(); i++)
     {

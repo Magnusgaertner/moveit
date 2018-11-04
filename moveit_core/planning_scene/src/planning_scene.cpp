@@ -39,14 +39,9 @@
 #include <moveit/collision_detection_fcl/collision_detector_allocator_fcl.h>
 #include <geometric_shapes/shape_operations.h>
 #include <moveit/collision_detection/collision_tools.h>
-#include <moveit/trajectory_processing/trajectory_tools.h>
 #include <moveit/robot_state/conversions.h>
-#include <moveit/exceptions/exceptions.h>
-#include <moveit/robot_state/attached_body.h>
 #include <octomap_msgs/conversions.h>
 #include <eigen_conversions/eigen_msg.h>
-#include <memory>
-#include <set>
 
 namespace planning_scene
 {
@@ -510,6 +505,9 @@ void PlanningScene::pushDiffs(const PlanningScenePtr& scene)
           scene->setObjectType(it->first, getObjectType(it->first));
       }
     }
+    if(world_diff_->getDoMapUpdate()){
+      scene->world_->setMapPtr(world_->getMapPtr());
+    }
   }
 }
 
@@ -748,7 +746,7 @@ void PlanningScene::getPlanningSceneDiffMsg(moveit_msgs::PlanningScene& scene_ms
 
   if (world_diff_)
   {
-    bool do_omap = false;
+    bool do_omap = world_diff_->getDoMapUpdate();
     for (collision_detection::WorldDiff::const_iterator it = world_diff_->begin(); it != world_diff_->end(); ++it)
     {
       if (it->first == OCTOMAP_NS)
@@ -880,7 +878,10 @@ bool PlanningScene::getOctomapMsg(octomap_msgs::OctomapWithPose& octomap) const
 {
   octomap.header.frame_id = getPlanningFrame();
   octomap.octomap = octomap_msgs::Octomap();
-
+  if(world_->getMapPtr()){
+      world_->getMapPtr()->getOctreeMessage(&octomap.octomap);
+      return true;
+  }
   collision_detection::CollisionWorld::ObjectConstPtr map = world_->getObject(OCTOMAP_NS);
   if (map)
   {
@@ -1399,6 +1400,14 @@ void PlanningScene::processOctomapPtr(const std::shared_ptr<const octomap::OcTre
   world_->removeObject(OCTOMAP_NS);
   world_->addToObject(OCTOMAP_NS, shapes::ShapeConstPtr(new shapes::OcTree(octree)), t);
 }
+
+  void PlanningScene::processMapPtr(const std::shared_ptr<collision_detection::MoveitMap>& octree, const Eigen::Affine3d& t)
+  {
+    if(world_)
+      world_->setMapPtr(octree);
+    if(world_diff_)
+      world_diff_->setDoMapUpdate();
+  }
 
 bool PlanningScene::processAttachedCollisionObjectMsg(const moveit_msgs::AttachedCollisionObject& object)
 {

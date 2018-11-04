@@ -274,7 +274,7 @@ public:
    */
   virtual double getDistance(double x, double y, double z) const = 0;
 
-  /**
+    virtual /**
    * \brief Gets not only the distance to the nearest cell but the
    * gradient direction.  The gradient is computed as a function of
    * the distances of near-by cells.  An uninitialized distance is

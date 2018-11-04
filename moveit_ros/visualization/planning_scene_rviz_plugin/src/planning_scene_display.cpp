@@ -54,8 +54,11 @@
 #include <rviz/frame_manager.h>
 #include <tf/transform_listener.h>
 
-#include <OgreSceneManager.h>
-#include <OgreSceneNode.h>
+
+#include <OGRE/OgreSceneManager.h>
+#include <OGRE/OgreSceneNode.h>
+
+
 
 namespace moveit_rviz_plugin
 {

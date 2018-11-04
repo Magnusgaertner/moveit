@@ -46,6 +46,12 @@ World::World()
 World::World(const World& other)
 {
   objects_ = other.objects_;
+  map_ = other.map_;
+}
+World& World::operator=(const World& other){
+  objects_ = other.objects_;
+  map_ = other.map_;
+  return *this;
 }
 
 World::~World()
@@ -171,6 +177,22 @@ bool World::moveObject(const std::string& id, const Eigen::Affine3d& transform)
   return true;
 }
 
+bool World::moveObject(const std::string& id, const Eigen::Affine3d& transform)
+{
+  auto it = objects_.find(id);
+  if (it == objects_.end())
+    return false;
+  if (transform.isApprox(Eigen::Affine3d::Identity()))
+    return true;  // object already at correct location
+  ensureUnique(it->second);
+  for (size_t i = 0, n = it->second->shapes_.size(); i < n; ++i)
+  {
+    it->second->shape_poses_[i] = transform * it->second->shape_poses_[i];
+  }
+  notify(it->second, MOVE_SHAPE);
+  return true;
+}
+
 bool World::removeShapeFromObject(const std::string& id, const shapes::ShapeConstPtr& shape)
 {
   auto it = objects_.find(id);
@@ -262,5 +284,15 @@ void World::notifyObserverAllObjects(const ObserverHandle observer_handle, Actio
     }
   }
 }
+
+void World::setMapPtr(const collision_detection::MoveitMapPtr& map){map_ = map;}
+
+collision_detection::MoveitMapConstPtr World::getMapPtr() const{return map_;}
+
+collision_detection::MoveitMapPtr World::getMapPtr(){return map_;}
+
+void World::setMapPose(const Eigen::Affine3d& t){map_pose_ = t;}
+
+Eigen::Affine3d World::getWorldPose(){return map_pose_;}
 
 }  // end of namespace collision_detection

@@ -37,7 +37,7 @@
 #include <ros/ros.h>
 #include <moveit_msgs/SaveMap.h>
 #include <moveit_msgs/LoadMap.h>
-#include <moveit/collision_detection/moveit_map.h>
+#include <moveit/map/moveit_map.h>
 #include <moveit/occupancy_map_monitor/occupancy_map_monitor.h>
 #include <XmlRpcException.h>
 #include <typeinfo>
@@ -95,7 +95,7 @@ void OccupancyMapMonitor<MapType>::initialize()
 
 
   map_const_ = map_;
-  base_map_ = std::static_pointer_cast<MoveitMap, MapType>(map_);
+  base_map_ = std::static_pointer_cast<map::MoveitMap, MapType>(map_);
   base_map_const_ = base_map_;
 
   XmlRpc::XmlRpcValue sensor_list;

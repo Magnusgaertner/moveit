@@ -46,7 +46,7 @@
 #include <boost/function.hpp>
 #include <Eigen/Geometry>
 #include <eigen_stl_containers/eigen_stl_vector_container.h>
-#include <moveit/collision_detection/moveit_map.h>
+#include <moveit/map/moveit_map.h>
 
 
 namespace shapes
@@ -247,9 +247,9 @@ public:
    * Used which switching from one world to another. */
   void notifyObserverAllObjects(const ObserverHandle observer_handle, Action action) const;
 
-  void setMapPtr(const MoveitMapPtr& map);
-  MoveitMapConstPtr getMapPtr() const;
-  MoveitMapPtr getMapPtr();
+  void setMapPtr(const map::MoveitMapPtr& map);
+  map::MoveitMapConstPtr getMapPtr() const;
+  map::MoveitMapPtr getMapPtr();
   void setMapPose(const Eigen::Affine3d& t);
   Eigen::Affine3d getWorldPose();
 private:
@@ -270,7 +270,7 @@ private:
 
   /** The objects maintained in the world */
   std::map<std::string, ObjectPtr> objects_;
-  MoveitMapPtr map_;
+  map::MoveitMapPtr map_;
 
   Eigen::Affine3d map_pose_;
 

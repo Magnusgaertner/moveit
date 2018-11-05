@@ -51,7 +51,7 @@
 
 namespace occupancy_map_monitor
 {
-class PointCloudOctomapUpdater : public PointCloudMapUpdater<OccMapTree> {
+class PointCloudOctomapUpdater : public PointCloudMapUpdater<map::OccMapTree> {
 public:
   PointCloudOctomapUpdater():PointCloudMapUpdater(){}
 protected:

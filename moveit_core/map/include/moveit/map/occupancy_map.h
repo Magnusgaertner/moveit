@@ -34,20 +34,21 @@
 
 /* Author: Ioan Sucan, Jon Binney */
 
-#ifndef MOVEIT_OCCUPANCY_MAP_MONITOR_OCCUPANCY_MAP_
-#define MOVEIT_OCCUPANCY_MAP_MONITOR_OCCUPANCY_MAP_
+#ifndef MOVEIT_MAP_OCCUPANCY_MAP_
+#define MOVEIT_MAP_OCCUPANCY_MAP_
 
 #include <octomap/octomap.h>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/function.hpp>
 #include <memory>
-#include <moveit/collision_detection/moveit_map.h>
+#include <moveit/map/moveit_map.h>
 #include <octomap_msgs/conversions.h>
-namespace occupancy_map_monitor
+#include <ros/ros.h>
+namespace map
 {
 typedef octomap::OcTreeNode OccMapNode;
 
-class OccMapTree : public octomap::OcTree, public collision_detection::MoveitMap {
+class OccMapTree : public octomap::OcTree, public map::MoveitMap {
 public:
 
   OccMapTree(double resolution) : octomap::OcTree(resolution) {}
@@ -55,6 +56,15 @@ public:
   OccMapTree(const std::string& filename) : octomap::OcTree(filename) {}
 
   virtual ~OccMapTree() = default;
+
+#ifdef NEW_MSG_FORMAT
+  virtual void useDistanceFieldMessage(const voxblox_msgs::Layer& layer) override{
+    ROS_WARN("octomap can not use voxblox message!");
+  }
+  virtual bool getMapMsg(moveit_msgs::PlanningSceneWorld& world) const override{
+    //TODO
+  }
+#endif
 
   inline virtual bool writeBinary(const std::string& filename) override{
     octomap::OcTree::writeBinary(filename);
@@ -67,7 +77,7 @@ public:
     octomap::OcTree::clear();
   }
   inline static std::string name(){
-    return "occupancy_map_monitor::OccMapTree";
+    return "map::OccMapTree";
   }
 
   //this is the obvious case
@@ -75,7 +85,7 @@ public:
     octomap_msgs::fullMapToMsg(*this, *msg);
   }
 
- /* inline virtual void updateScene(const std::shared_ptr<const collision_detection::MoveitMap>& me, planning_scene::PlanningScenePtr& scene, const Eigen::Affine3d& t) override{
+ /* inline virtual void updateScene(const std::shared_ptr<const map::MoveitMap>& me, planning_scene::PlanningScenePtr& scene, const Eigen::Affine3d& t) override{
     scene->processOctomapPtr(std::dynamic_pointer_cast(me), t);
   }*/
 private:

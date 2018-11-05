@@ -46,13 +46,13 @@
 #include <moveit/point_containment_filter/shape_mask.h>
 
 #include <memory>
-#include <moveit/occupancy_map_monitor/esdf_map.h>
+#include <moveit/map/esdf_map.h>
 #include "pointcloud_map_updater.h"
 
 
 namespace occupancy_map_monitor
 {
-  class PointCloudEsdfUpdater : public PointCloudMapUpdater<EsdfMap> {
+  class PointCloudEsdfUpdater : public PointCloudMapUpdater<map::EsdfMap> {
   public:
     PointCloudEsdfUpdater():PointCloudMapUpdater(){}
     virtual bool setParams(XmlRpc::XmlRpcValue &params);

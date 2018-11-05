@@ -1,5 +1,5 @@
 <library path="libmoveit_pointcloud_esdf_updater">
-  <class name="occupancy_map_monitor/PointCloudEsdfUpdater" type="occupancy_map_monitor::PointCloudEsdfUpdater" base_class_type="occupancy_map_monitor::OccupancyMapUpdater<occupancy_map_monitor::EsdfMap>">
+  <class name="occupancy_map_monitor/PointCloudEsdfUpdater" type="occupancy_map_monitor::PointCloudEsdfUpdater" base_class_type="occupancy_map_monitor::OccupancyMapUpdater<map::EsdfMap>">
     <description>
     </description>
   </class>

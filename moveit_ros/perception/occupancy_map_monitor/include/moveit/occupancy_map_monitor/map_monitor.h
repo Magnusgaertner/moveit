@@ -46,7 +46,7 @@
 #include <moveit_msgs/SaveMap.h>
 #include <moveit_msgs/LoadMap.h>
 #include <moveit/occupancy_map_monitor/map_updater.h>
-#include <moveit/collision_detection/moveit_map.h>
+#include <moveit/map/moveit_map.h>
 
 #include <boost/thread/mutex.hpp>
 
@@ -54,9 +54,9 @@
 
 namespace occupancy_map_monitor
 {
-  using collision_detection::MoveitMapPtr;
-  using collision_detection::MoveitMap;
-  using collision_detection::MoveitMapConstPtr;
+  using map::MoveitMapPtr;
+  using map::MoveitMap;
+  using map::MoveitMapConstPtr;
   MOVEIT_CLASS_FORWARD(MapMonitor);
 
   class MapMonitor
@@ -71,13 +71,13 @@ namespace occupancy_map_monitor
     /** @brief Get a pointer to the underlying map for this monitor. Lock the map before reading or writing using this
      *  pointer. The value of this pointer stays the same throughout the existance of the monitor instance. */
     //as this is part of a public interface the function is not renamed to i.e getMapPtr()
-    virtual const collision_detection::MoveitMapPtr& getOcTreePtr() = 0;
+    virtual const map::MoveitMapPtr& getOcTreePtr() = 0;
 
 
     /** @brief Get a const pointer to the underlying octree for this monitor. Lock the
      *  tree before reading this pointer */
     //as this is part of a public interface the function is not renamed to i.e getMapPtr()
-    virtual const collision_detection::MoveitMapConstPtr& getOcTreePtr() const = 0;
+    virtual const map::MoveitMapConstPtr& getOcTreePtr() const = 0;
 
 
     virtual const std::string& getMapFrame() const = 0;

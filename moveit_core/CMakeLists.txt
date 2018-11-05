@@ -55,6 +55,10 @@ COMPONENTS
   trajectory_msgs
   visualization_msgs
   swri_profiler
+        voxblox_ros
+        voxblox
+        voxblox_octomap_conversions
+        voxblox_msgs
 )
 
 set(VERSION_FILE_PATH "${CATKIN_DEVEL_PREFIX}/include")
@@ -84,6 +88,7 @@ set(THIS_PACKAGE_INCLUDE_DIRS
     robot_trajectory/include
     kinematic_constraints/include
     macros/include
+    map/include
     planning_interface/include
     planning_request_adapter/include
     planning_scene/include
@@ -109,6 +114,7 @@ catkin_package(
     moveit_collision_detection_fcl
     moveit_kinematic_constraints
     moveit_planning_scene
+    moveit_map
     moveit_constraint_samplers
     moveit_planning_request_adapter
     moveit_profiler
@@ -126,6 +132,10 @@ catkin_package(
     kdl_parser
     moveit_msgs
     octomap_msgs
+    voxblox_octomap_conversions
+    voxblox_msgs
+    voxblox_ros
+    voxblox
     random_numbers
     sensor_msgs
     srdfdom
@@ -173,6 +183,7 @@ add_subdirectory(background_processing)
 add_subdirectory(kinematics_base)
 add_subdirectory(controller_manager)
 add_subdirectory(sensor_manager)
+add_subdirectory(map)
 add_subdirectory(robot_model)
 add_subdirectory(transforms)
 add_subdirectory(robot_state)

@@ -37,4 +37,4 @@
 #include <class_loader/class_loader.hpp>
 #include <moveit/pointcloud_octomap_updater/pointcloud_esdf_updater.h>
 
-CLASS_LOADER_REGISTER_CLASS(occupancy_map_monitor::PointCloudEsdfUpdater, occupancy_map_monitor::OccupancyMapUpdater<occupancy_map_monitor::EsdfMap>)
+CLASS_LOADER_REGISTER_CLASS(occupancy_map_monitor::PointCloudEsdfUpdater, occupancy_map_monitor::OccupancyMapUpdater<map::EsdfMap>)

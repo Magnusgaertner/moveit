@@ -1,15 +1,38 @@
 
 
 
-#include <moveit/occupancy_map_monitor/esdf_map.h>
+#include <moveit/map/esdf_map.h>
 #include <swri_profiler/profiler.h>
 #include <eigen_stl_containers/eigen_stl_containers.h>
 #include <voxblox/utils/planning_utils.h>
 #include <moveit/distance_field/propagation_distance_field.h>
-namespace occupancy_map_monitor {
+namespace map {
+    inline voxblox::EsdfMap::Config getEsdfMapConfig(double res, int block_size) {
+        voxblox::EsdfMap::Config esdf_config;
+        esdf_config.esdf_voxel_size = res;
+        esdf_config.esdf_voxels_per_side = block_size;
+        return esdf_config;
+    }
+
+    inline voxblox::TsdfMap::Config getTsdfMapConfig(double res, int block_size) {
+        voxblox::TsdfMap::Config tsdf_config;
+        tsdf_config.tsdf_voxel_size = res;
+        tsdf_config.tsdf_voxels_per_side = block_size;
+        return tsdf_config;
+    }
+    EsdfMap::EsdfMap(double resolution):
+            voxblox::EsdfServer(ros::NodeHandle(),
+                                ros::NodeHandle("~voxblox"),
+                                getEsdfMapConfig(resolution, 16),
+                                voxblox::EsdfIntegrator::Config{},
+                                getTsdfMapConfig(resolution, 16),
+                                voxblox::TsdfIntegratorBase::Config{}),
+            DistanceField(0,0,0,0,0,0,0) {
 
 
-    EsdfMap::EsdfMap(double resolution):voxblox::EsdfServer(ros::NodeHandle(), ros::NodeHandle("~voxblox")), DistanceField(0,0,0,0,0,0,0) { init(); }
+        init();
+    }
+
 
     EsdfMap::EsdfMap(const std::string &filename):voxblox::EsdfServer(ros::NodeHandle(), ros::NodeHandle("~voxblox")), DistanceField(0,0,0,0,0,0,0) { init(); }
 
@@ -17,6 +40,19 @@ namespace occupancy_map_monitor {
         ros::NodeHandle nh("~voxblox");
         nh.param("convert_to_octree", convert_to_octree, false);
     }
+
+#ifdef NEW_MSG_FORMAT
+    void EsdfMap::useDistanceFieldMessage(const voxblox_msgs::Layer& layer){
+        esdfMapCallback(layer);
+    }
+
+    bool EsdfMap::getMapMsg(moveit_msgs::PlanningSceneWorld& world) const{
+        voxblox::serializeLayerAsMsg<voxblox::EsdfVoxel>(this->esdf_map_->getEsdfLayer(),
+                                       false, &world.distancefield);
+
+        world.distancefield.action = static_cast<uint8_t>(voxblox::MapDerializationAction::kReset);
+    }
+#endif
 
     bool EsdfMap::writeBinary(const std::string &filename)  {
       return saveMap(filename);
@@ -30,7 +66,7 @@ namespace occupancy_map_monitor {
     }
 
     std::string EsdfMap::name(){
-      return "occupancy_map_monitor::EsdfMap";
+      return "map::EsdfMap";
     }
 
 

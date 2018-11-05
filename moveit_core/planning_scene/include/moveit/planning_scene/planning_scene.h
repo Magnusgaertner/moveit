@@ -37,6 +37,8 @@
 #ifndef MOVEIT_PLANNING_SCENE_PLANNING_SCENE_
 #define MOVEIT_PLANNING_SCENE_PLANNING_SCENE_
 
+#define  NEW_MSG_FORMAT
+
 #include <moveit/robot_model/robot_model.h>
 #include <moveit/robot_state/robot_state.h>
 #include <moveit/transforms/transforms.h>
@@ -709,6 +711,10 @@ public:
 
   /** \brief Construct a message (\e octomap) with the octomap data from the planning_scene */
   bool getOctomapMsg(octomap_msgs::OctomapWithPose& octomap) const;
+
+#ifdef NEW_MSG_FORMAT
+  bool getMapMsg(moveit_msgs::PlanningSceneWorld& world) const;
+#endif
 
   /** \brief Construct a vector of messages (\e object_colors) with the colors of the objects from the planning_scene */
   void getObjectColorMsgs(std::vector<moveit_msgs::ObjectColor>& object_colors) const;

@@ -73,7 +73,6 @@ catkin_package(
     moveit_lazy_free_space_updater
     moveit_point_containment_filter
     moveit_occupancy_map_monitor
-    moveit_occupancy_map_monitor_esdf_map
     moveit_pointcloud_octomap_updater_core
     moveit_pointcloud_esdf_updater_core
     moveit_semantic_world

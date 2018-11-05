@@ -37,7 +37,7 @@
 #ifndef MOVEIT_OCCUPANCY_MAP_MONITOR_LAZY_FREE_SPACE_UPDATER_
 #define MOVEIT_OCCUPANCY_MAP_MONITOR_LAZY_FREE_SPACE_UPDATER_
 
-#include <moveit/occupancy_map_monitor/occupancy_map.h>
+#include <moveit/map/occupancy_map.h>
 #include <boost/thread.hpp>
 #include <deque>
 
@@ -46,7 +46,7 @@ namespace occupancy_map_monitor
 class LazyFreeSpaceUpdater
 {
 public:
-  LazyFreeSpaceUpdater(const OccMapTreePtr& tree, unsigned int max_batch_size = 10);
+  LazyFreeSpaceUpdater(const map::OccMapTreePtr& tree, unsigned int max_batch_size = 10);
   ~LazyFreeSpaceUpdater();
 
   void pushLazyUpdate(octomap::KeySet* occupied_cells, octomap::KeySet* model_cells,
@@ -65,7 +65,7 @@ private:
   void lazyUpdateThread();
   void processThread();
 
-  OccMapTreePtr tree_;
+  map::OccMapTreePtr tree_;
   bool running_;
   std::size_t max_batch_size_;
   double max_sensor_delta_;

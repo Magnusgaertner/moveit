@@ -34,24 +34,29 @@
 
 /* Author: Magnus Gärtner */
 
-#ifndef MOVEIT_OCCUPANCY_MAP_MONITOR_ESDF_MAP_
-#define MOVEIT_OCCUPANCY_MAP_MONITOR_ESDF_MAP_
+#ifndef MOVEIT_MAP_ESDF_MAP_
+#define MOVEIT_MAP_ESDF_MAP_
 
 
 #include <ros/ros.h>
 #include <voxblox_ros/esdf_server.h>
-#include <moveit/collision_detection/moveit_map.h>
+#include <moveit/map/moveit_map.h>
 #include <moveit/distance_field/distance_field.h>
 #include <voxblox_octomap_conversions/octomap_conversions.h>
-namespace occupancy_map_monitor {
+namespace map {
 
-  class EsdfMap : public voxblox::EsdfServer , public distance_field::DistanceField, public collision_detection::MoveitMap {
+  class EsdfMap : public voxblox::EsdfServer , public distance_field::DistanceField, public map::MoveitMap {
   public:
     EsdfMap(double resolution);
 
     EsdfMap(const std::string &filename);
     virtual ~EsdfMap() = default;
     void init() ;
+
+#ifdef NEW_MSG_FORMAT
+    virtual void useDistanceFieldMessage(const voxblox_msgs::Layer& layer) override;
+    virtual bool getMapMsg(moveit_msgs::PlanningSceneWorld& world) const override;
+#endif
 
     virtual bool writeBinary(const std::string &filename) override ;
 

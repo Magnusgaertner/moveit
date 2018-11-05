@@ -765,8 +765,13 @@ void PlanningScene::getPlanningSceneDiffMsg(moveit_msgs::PlanningScene& scene_ms
         getCollisionObjectMsg(scene_msg.world.collision_objects.back(), it->first);
       }
     }
+#ifndef NEW_MSG_FORMAT
     if (do_omap)
       getOctomapMsg(scene_msg.world.octomap);
+#else
+    if (do_omap)
+      getMapMsg(scene_msg.world);
+#endif
   }
 }
 
@@ -899,6 +904,34 @@ bool PlanningScene::getOctomapMsg(octomap_msgs::OctomapWithPose& octomap) const
   return false;
 }
 
+#ifdef NEW_MSG_FORMAT
+bool PlanningScene::getMapMsg(moveit_msgs::PlanningSceneWorld& world) const{
+  world.octomap.header.frame_id = getPlanningFrame();
+  world.octomap.octomap = octomap_msgs::Octomap();
+
+  collision_detection::CollisionWorld::ObjectConstPtr map = world_->getObject(OCTOMAP_NS);
+  if (map)
+  {
+    if (map->shapes_.size() == 1)
+    {
+      const shapes::OcTree* o = static_cast<const shapes::OcTree*>(map->shapes_[0].get());
+      octomap_msgs::fullMapToMsg(*o->octree, world.octomap.octomap);
+      tf::poseEigenToMsg(map->shape_poses_[0], world.octomap.origin);
+
+    }
+    ROS_ERROR_NAMED("planning_scene",
+                    "Unexpected number of shapes in octomap collision object. Not including '%s' object",
+                    OCTOMAP_NS.c_str());
+  }
+
+  if(world_->getMapPtr())
+    world_->getMapPtr()->getMapMsg(world);
+  if(world.distancefield.blocks.empty() && world.octomap.octomap.data.empty())
+    return false;
+  return true;
+}
+#endif
+
 void PlanningScene::getObjectColorMsgs(std::vector<moveit_msgs::ObjectColor>& object_colors) const
 {
   object_colors.clear();
@@ -931,8 +964,12 @@ void PlanningScene::getPlanningSceneMsg(moveit_msgs::PlanningScene& scene_msg) c
   // add collision objects
   getCollisionObjectMsgs(scene_msg.world.collision_objects);
 
-  // get the octomap
+  // get the map
+#ifdef NEW_MSG_FORMAT
+  getMapMsg(scene_msg.world);
+#else
   getOctomapMsg(scene_msg.world.octomap);
+#endif
 }
 
 void PlanningScene::getPlanningSceneMsg(moveit_msgs::PlanningScene& scene_msg,
@@ -996,10 +1033,15 @@ void PlanningScene::getPlanningSceneMsg(moveit_msgs::PlanningScene& scene_msg,
         scene_msg.world.collision_objects.push_back(co);
       }
   }
-
+#ifndef NEW_MSG_FORMAT
   // get the octomap
   if (comp.components & moveit_msgs::PlanningSceneComponents::OCTOMAP)
     getOctomapMsg(scene_msg.world.octomap);
+#else
+    // get the map, PlanningSceneComponents::OCTOMAP is also used to indicate sending a voxblox layer
+    if (comp.components & moveit_msgs::PlanningSceneComponents::OCTOMAP)
+        getMapMsg(scene_msg.world);//getOctomapMsg(scene_msg.world.octomap);
+#endif
 }
 
 void PlanningScene::saveGeometryToStream(std::ostream& out) const
@@ -1401,7 +1443,7 @@ void PlanningScene::processOctomapPtr(const std::shared_ptr<const octomap::OcTre
   world_->addToObject(OCTOMAP_NS, shapes::ShapeConstPtr(new shapes::OcTree(octree)), t);
 }
 
-  void PlanningScene::processMapPtr(const std::shared_ptr<collision_detection::MoveitMap>& octree, const Eigen::Affine3d& t)
+  void PlanningScene::processMapPtr(const std::shared_ptr<map::MoveitMap>& octree, const Eigen::Affine3d& t)
   {
     if(world_)
       world_->setMapPtr(octree);

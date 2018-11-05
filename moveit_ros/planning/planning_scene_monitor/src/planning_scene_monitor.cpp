@@ -45,7 +45,7 @@
 #include <swri_profiler/profiler.h>
 #include <memory>
 
-#include <moveit/occupancy_map_monitor/esdf_map.h>
+#include <moveit/map/esdf_map.h>
 
 namespace planning_scene_monitor
 {
@@ -345,7 +345,7 @@ void planning_scene_monitor::PlanningSceneMonitor::scenePublishingThread()
   {
     moveit_msgs::PlanningScene msg;
     {
-      occupancy_map_monitor::OccMapTree::ReadLock lock;
+      map::OccMapTree::ReadLock lock;
       if (octomap_monitor_)
         lock = octomap_monitor_->getOcTreePtr()->reading();
       scene_->getPlanningSceneMsg(msg);
@@ -377,7 +377,7 @@ void planning_scene_monitor::PlanningSceneMonitor::scenePublishingThread()
             is_full = true;
           else
           {
-            occupancy_map_monitor::OccMapTree::ReadLock lock;
+            map::OccMapTree::ReadLock lock;
             if (octomap_monitor_)
               lock = octomap_monitor_->getOcTreePtr()->reading();
             scene_->getPlanningSceneDiffMsg(msg);
@@ -403,7 +403,7 @@ void planning_scene_monitor::PlanningSceneMonitor::scenePublishingThread()
           }
           if (is_full)
           {
-            occupancy_map_monitor::OccMapTree::ReadLock lock;
+            map::OccMapTree::ReadLock lock;
             if (octomap_monitor_)
               lock = octomap_monitor_->getOcTreePtr()->reading();
             scene_->getPlanningSceneMsg(msg);
@@ -1104,7 +1104,7 @@ void planning_scene_monitor::PlanningSceneMonitor::startWorldGeometryMonitor(con
     if(!map_type.compare("octomap")){
         if (!octomap_monitor_)
         {
-            octomap_monitor_.reset(new occupancy_map_monitor::OccupancyMapMonitor<occupancy_map_monitor::OccMapTree>(tf_, scene_->getPlanningFrame()));
+            octomap_monitor_.reset(new occupancy_map_monitor::OccupancyMapMonitor<map::OccMapTree>(tf_, scene_->getPlanningFrame()));
             excludeRobotLinksFromOctree();
             excludeAttachedBodiesFromOctree();
             excludeWorldObjectsFromOctree();
@@ -1117,7 +1117,7 @@ void planning_scene_monitor::PlanningSceneMonitor::startWorldGeometryMonitor(con
     }else if(!map_type.compare("esdf")){
         if (!octomap_monitor_)
         {
-            octomap_monitor_.reset(new occupancy_map_monitor::OccupancyMapMonitor<occupancy_map_monitor::EsdfMap>(tf_, scene_->getPlanningFrame()));
+            octomap_monitor_.reset(new occupancy_map_monitor::OccupancyMapMonitor<map::EsdfMap>(tf_, scene_->getPlanningFrame()));
             excludeRobotLinksFromOctree();
             excludeAttachedBodiesFromOctree();
             excludeWorldObjectsFromOctree();
@@ -1266,7 +1266,7 @@ void planning_scene_monitor::PlanningSceneMonitor::octomapUpdateCallback()
     octomap_monitor_->getOcTreePtr()->lockRead();
     try
     {
-      scene_->processOctomapPtr(std::dynamic_pointer_cast<occupancy_map_monitor::OccMapTree, collision_detection::MoveitMap>(octomap_monitor_->getOcTreePtr()), Eigen::Affine3d::Identity());
+      scene_->processOctomapPtr(std::dynamic_pointer_cast<map::OccMapTree, map::MoveitMap>(octomap_monitor_->getOcTreePtr()), Eigen::Affine3d::Identity());
       octomap_monitor_->getOcTreePtr()->unlockRead();
     }
     catch (...)

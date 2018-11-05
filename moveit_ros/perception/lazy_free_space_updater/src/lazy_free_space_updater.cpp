@@ -39,7 +39,7 @@
 
 namespace occupancy_map_monitor
 {
-LazyFreeSpaceUpdater::LazyFreeSpaceUpdater(const OccMapTreePtr& tree, unsigned int max_batch_size)
+LazyFreeSpaceUpdater::LazyFreeSpaceUpdater(const map::OccMapTreePtr& tree, unsigned int max_batch_size)
   : tree_(tree)
   , running_(true)
   , max_batch_size_(max_batch_size)

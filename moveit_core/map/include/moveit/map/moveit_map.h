@@ -1,5 +1,5 @@
-#ifndef MOVEIT_INDUSTRIAL_TOPLEVEL_MOVEIT_MAP_H
-#define MOVEIT_INDUSTRIAL_TOPLEVEL_MOVEIT_MAP_H
+#ifndef MOVEIT_MAP_MOVEIT_MAP_H
+#define MOVEIT_MAP_MOVEIT_MAP_H
 
 
 //dont know how to include boost::function<void()> otherwise
@@ -7,7 +7,14 @@
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/function.hpp>
 #include <octomap_msgs/Octomap.h>
-namespace collision_detection {
+#define NEW_MSG_FORMAT
+
+#ifdef NEW_MSG_FORMAT
+#include <moveit_msgs/PlanningSceneWorld.h>
+#include <voxblox_msgs/Layer.h>
+#endif
+
+namespace map {
   class MoveitMap {
   public:
     virtual ~MoveitMap() = default;
@@ -37,6 +44,11 @@ namespace collision_detection {
     ReadLock reading();
 
     WriteLock writing();
+
+#ifdef NEW_MSG_FORMAT
+    virtual void useDistanceFieldMessage(const voxblox_msgs::Layer& layer)=0;
+    virtual bool getMapMsg(moveit_msgs::PlanningSceneWorld& world) const = 0;
+#endif
 
     /**
      * @details default callbacks are planning_scene_monitor::esdf/octomapUpdateCallback

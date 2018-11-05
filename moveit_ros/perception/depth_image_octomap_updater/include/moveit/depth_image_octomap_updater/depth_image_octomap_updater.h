@@ -48,7 +48,7 @@
 
 namespace occupancy_map_monitor
 {
-class DepthImageOctomapUpdater : public OccupancyMapUpdater<occupancy_map_monitor::OccMapTree>
+class DepthImageOctomapUpdater : public OccupancyMapUpdater<map::OccMapTree>
 {
 public:
   DepthImageOctomapUpdater();

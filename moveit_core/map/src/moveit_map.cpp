@@ -2,9 +2,9 @@
 // Created by magnus on 07.09.18.
 //
 
-#include <moveit/collision_detection/moveit_map.h>
+#include <moveit/map/moveit_map.h>
 
-namespace collision_detection{
+namespace map{
 
   void MoveitMap::lockRead() { map_mutex_.lock_shared(); }
 

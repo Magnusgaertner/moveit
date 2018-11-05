@@ -80,7 +80,7 @@ public:
   /** @brief Get a pointer to the underlying map for this monitor. Lock the map before reading or writing using this
    *  pointer. The value of this pointer stays the same throughout the existance of the monitor instance. */
   //as this is part of a public interface the function is not renamed to i.e getMapPtr()
-  virtual const collision_detection::MoveitMapPtr& getOcTreePtr() override
+  virtual const map::MoveitMapPtr& getOcTreePtr() override
   {
     return base_map_;
   }
@@ -89,7 +89,7 @@ public:
   /** @brief Get a const pointer to the underlying map for this monitor. Lock the
    *  map before reading this pointer */
   //as this is part of a public interface the function is not renamed to i.e getMapPtr()
-  virtual const collision_detection::MoveitMapConstPtr& getOcTreePtr() const override
+  virtual const map::MoveitMapConstPtr& getOcTreePtr() const override
   {
     return base_map_const_;
   }
@@ -162,8 +162,8 @@ private:
 
   MapTypePtr map_;
   MapTypeConstPtr map_const_;
-  collision_detection::MoveitMapPtr base_map_;
-  collision_detection::MoveitMapConstPtr base_map_const_;
+  map::MoveitMapPtr base_map_;
+  map::MoveitMapConstPtr base_map_const_;
   
   std::unique_ptr<pluginlib::ClassLoader<OccupancyMapUpdater<MapType> > > updater_plugin_loader_;
   std::vector<OccupancyMapUpdaterPtr> map_updaters_;

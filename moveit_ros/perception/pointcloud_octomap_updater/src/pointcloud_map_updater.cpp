@@ -42,11 +42,11 @@
 #include <XmlRpcException.h>
 
 #include <memory>
-#include <moveit/occupancy_map_monitor/esdf_map.h>
+#include <moveit/map/esdf_map.h>
 
 namespace occupancy_map_monitor {
-  template class PointCloudMapUpdater<OccMapTree>;
-  template class PointCloudMapUpdater<EsdfMap>;
+  template class PointCloudMapUpdater<map::OccMapTree>;
+  template class PointCloudMapUpdater<map::EsdfMap>;
 
   template <typename MapType>
   PointCloudMapUpdater<MapType>::PointCloudMapUpdater()
